@@ -1,0 +1,28 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/tommy/Projects/catkin_ws/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/tommy/Projects/catkin_ws/src/apriltag_ros/apriltag_ros/include/**",
+        "/home/tommy/Projects/catkin_ws/src/tracking_control/fsc_autopilot_ros/include/**",
+        "/home/tommy/Projects/catkin_ws/src/mjpeg_cam/include/**",
+        "/home/tommy/Projects/catkin_ws/src/optitrack_broadcast/include/**",
+        "/home/tommy/Projects/catkin_ws/src/px4_apriltag_landing/include/**",
+        "/home/tommy/Projects/catkin_ws/src/ros_arduino_encoder/include/**",
+        "/home/tommy/Projects/catkin_ws/src/state_estimator/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}
