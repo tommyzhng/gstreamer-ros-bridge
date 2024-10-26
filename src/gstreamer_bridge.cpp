@@ -8,16 +8,16 @@ GstreamerRosBridge::GstreamerRosBridge(ros::NodeHandle &nh) : cap_("/dev/video0"
             "x264enc bitrate=1200 speed-preset=ultrafast tune=zerolatency ! "
             "rtph264pay mtu=900 ! udpsink host=100.64.0.3 port=5602 sync=false";
         
-    pipeline_.open(gstreamer_pipeline, cv::CAP_GSTREAMER, 0, 0, cv::Size(640, 480), true);
+    pipeline_.open(gstreamer_pipeline, cv::CAP_GSTREAMER, 0, 30.0, cv::Size(640, 480), true);
     if (!pipeline_.isOpened())
     {
         ROS_ERROR("Failed to open gstreamer pipeline");
         return;
     }
 
-    gsImageSub_ = nh.subscribe("/tag_detections_image/raw", 1, &GstreamerRosBridge::gsImageCallback, this);
+    gsImageSub_ = nh.subscribe("/tag_detections_image", 1, &GstreamerRosBridge::gsImageCallback, this);
     rosCameraInfoPub_ = nh.advertise<sensor_msgs::CameraInfo>("/camera/camera_info", 1);
-    rosImagePub_ = nh.advertise<sensor_msgs::CompressedImage>("/camera/image_rect", 1);
+    rosImagePub_ = nh.advertise<sensor_msgs::Image>("/camera/image_rect", 1);
 
     // initialize camera info
     cameraInfo_.header.frame_id = "camera";
