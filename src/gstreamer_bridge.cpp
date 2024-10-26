@@ -6,7 +6,7 @@ GstreamerRosBridge::GstreamerRosBridge(ros::NodeHandle &nh) : cap_("/dev/video0"
             "appsrc ! videoconvert ! videoscale ! "
             "video/x-raw,width=640,height=480,framerate=30/1 ! "
             "x264enc bitrate=1200 speed-preset=ultrafast tune=zerolatency ! "
-            "rtph264pay mtu=900 ! udpsink host=10.7.0.2 port=5602 sync=false";
+            "rtph264pay mtu=900 ! udpsink host=100.64.0.3 port=5602 sync=false";
         
     pipeline_.open(gstreamer_pipeline, cv::CAP_GSTREAMER, 0, 0, cv::Size(640, 480), true);
     if (!pipeline_.isOpened())
