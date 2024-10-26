@@ -53,7 +53,7 @@ void GstreamerRosBridge::startImageCapture()
         }
         sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
         rosImagePub_.publish(msg);
-        camera_Info_.header.stamp = ros::Time::now();
+        cameraInfo_.header.stamp = ros::Time::now();
         rosCameraInfoPub_.publish(cameraInfo_);
         ros::spinOnce();
         rate.sleep();
