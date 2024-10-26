@@ -52,8 +52,8 @@ void GstreamerRosBridge::startImageCapture()
             return;
         }
         // store current time in header
-        cv::cvtColor(frame, frame, cv::COLOR_GRAY2BGR);
-        frame.convertTo(frame, CV_8UC3);
+	//cv::cvtColor(frame, frame, cv::COLOR_GRAY2BGR);
+	
         sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
         ros::Time current_time = ros::Time::now();
         msg->header.stamp = current_time;
@@ -69,7 +69,9 @@ void GstreamerRosBridge::startImageCapture()
 void GstreamerRosBridge::gsImageCallback(const sensor_msgs::ImageConstPtr &msg)
 {
     try {
-        cv::Mat image = cv::imdecode(cv::Mat(msg->data), 1);
+	cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, "bgr8");
+	cv::Mat image = cv_ptr->image;
+	image.convertTo(image, CV_8UC3);
         pipeline_.write(image);
     } catch (cv_bridge::Exception &e) {
         // print error message
