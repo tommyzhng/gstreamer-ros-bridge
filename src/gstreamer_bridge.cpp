@@ -53,8 +53,9 @@ void GstreamerRosBridge::startImageCapture()
         }
         // store current time in header
         sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
-        msg->header.stamp = ros::Time::now();
-        cameraInfo_.header.stamp = ros::Time::now();
+        ros::Time current_time = ros::Time::now();
+        msg->header.stamp = current_time;
+        cameraInfo_.header.stamp = current_time;
 
         rosImagePub_.publish(msg);
         rosCameraInfoPub_.publish(cameraInfo_);
