@@ -15,11 +15,20 @@ public:
     GstreamerPublisher& operator=(const GstreamerPublisher&) = delete;
 
     /**
-     * @brief Initialize pipelines.
+     * @brief Initialize the pipeline.
      * 
+     * @param port UDP port that the stream will be read from.
      * @return True if initialization was successful.
      */
-    bool init();
+    bool init(int port);
+    /**
+     * @brief Initialize the pipeline.
+     * 
+     * @param pipeline Custom gstreamer pipeline.
+     * @return True if initialization was successful.
+     */
+    bool init(const std::string &pipeline);
+
     /**
      * @brief Try to receive and publish a single frame to the ROS topic.
      *
