@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="gstreamer_ros_bridge" type="gstreamer_publisher_node" name="gstreamer_publisher_node" output="screen">
+    </node>
+</launch>

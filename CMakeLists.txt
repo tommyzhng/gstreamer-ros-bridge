@@ -33,7 +33,7 @@ include_directories(
   ${GSTREAMER_INCLUDE_DIRS}
 )
 
-add_library(gstreamer_ros_bridge src/gstreamer_bridge.cpp)
+add_library(gstreamer_ros_bridge src/gstreamer_bridge.cpp src/gstreamer_publisher.cpp)
 target_include_directories(gstreamer_ros_bridge PUBLIC include)
 target_compile_features(gstreamer_ros_bridge PUBLIC cxx_std_17)
 
@@ -43,6 +43,10 @@ target_link_libraries(gstreamer_ros_bridge ${GST_LIBRARIES} ${OpenCV_LIBRARIES} 
 add_executable(gstreamer_bridge_node src/gstreamer_bridge_node.cpp)
 target_link_libraries(gstreamer_bridge_node PUBLIC ${catkin_LIBRARIES} gstreamer_ros_bridge)
 add_dependencies(gstreamer_bridge_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(gstreamer_publisher_node src/gstreamer_publisher_node.cpp)
+target_link_libraries(gstreamer_publisher_node PUBLIC ${catkin_LIBRARIES} gstreamer_ros_bridge)
+add_dependencies(gstreamer_publisher_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 catkin_package(
   CATKIN_DEPENDS roscpp std_msgs
