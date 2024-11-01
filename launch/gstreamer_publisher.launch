@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="gstreamer_ros_bridge" type="gstreamer_publisher_node" name="gstreamer_publisher_node" output="screen">
+        <param name="topic_name" value="/gstreamer_received"/>
+        <param name="port" value="5602"/>
+    </node>
+</launch>
