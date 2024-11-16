@@ -33,7 +33,7 @@ include_directories(
   ${GSTREAMER_INCLUDE_DIRS}
 )
 
-add_library(gstreamer_ros_bridge src/gstreamer_bridge.cpp src/gstreamer_publisher.cpp)
+add_library(gstreamer_ros_bridge src/gstreamer_bridge.cpp src/gstreamer_publisher.cpp src/camera_utils.cpp)
 target_include_directories(gstreamer_ros_bridge PUBLIC include)
 target_compile_features(gstreamer_ros_bridge PUBLIC cxx_std_17)
 
