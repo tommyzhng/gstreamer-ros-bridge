@@ -1,5 +1,4 @@
 #include "gstreamer_publisher.cpp"
-
 #include <ros/ros.h>
 
 int main(int argc, char **argv) {
