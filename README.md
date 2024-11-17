@@ -1,5 +1,5 @@
 # gstreamer-ros-bridge
-Bridges ROS image topics to gstreamer piplines and vice versa
+This package opens a camera stream onto a local ROS topic, allowing for any local node to do processing with minimal latency (such as feeding into an Apriltag detector). It then opens a Gstreamer pipeline to stream any local ROS topic to a peer, bypassing the inneficient video networking of ROS and allowing for feedback. This GStreamer video can also then be republished as a ROS topic on the peer, allowing for viewing on RQT.
 
 
 ## `gstreamer_bridge_node`
@@ -18,7 +18,7 @@ Params:
 ## `gstreamer_publisher_node`
 
 This node receives data from a GStreamer pipeline and publishes it to a ROS topic as a `sensor_msgs/Image` message.
-By default it expects H.264 encoded video sent over UDP. This is usually run on the 'peer' computer to connect to the bridge node to bypass the inefficient video networking of ROS.
+By default it expects H.264 encoded video sent over UDP. This is usually run on the 'peer' computer to connect to the bridge node.
 
 * Important note: this must be run before the `gstreamer_bridge_node` to make sure the camera pops up every time in rqt.
 
