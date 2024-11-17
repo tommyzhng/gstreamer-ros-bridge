@@ -1,4 +1,4 @@
-# gstreamer-ros-bridge
+# GStreamer ROS Bridge
 This package opens a camera stream onto a local ROS topic, allowing for any local node to do processing with minimal latency (such as feeding into an Apriltag detector). It then opens a Gstreamer pipeline to stream any local ROS topic to a peer, bypassing the inneficient video networking of ROS and allowing for feedback. This GStreamer video can also then be republished as a ROS topic on the peer, allowing for viewing on RQT.
 
 
