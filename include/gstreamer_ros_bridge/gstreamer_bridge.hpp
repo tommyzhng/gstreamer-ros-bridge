@@ -48,6 +48,7 @@ private:
     
     // gstreamer pipeline
     cv::VideoCapture cap_;
+    cv::Mat frame_;
     cv::VideoWriter pipeline_;
 
     // gstreamer param member vars

@@ -14,15 +14,14 @@ void GstreamerRosBridge::setCameraParams()
 
 void GstreamerRosBridge::pubCameraImage()
 {
-    cv::Mat frame;
-    cap_ >> frame;
-    if (frame.empty())
+    cap_ >> frame_;
+    if (frame_.empty())
     {
         ROS_ERROR("No image captured (its gg)");
         return;
     }
 	
-    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
+    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame_).toImageMsg();
     ros::Time current_time = ros::Time::now();
     msg->header.stamp = current_time;
     cameraInfo_.header.stamp = current_time;

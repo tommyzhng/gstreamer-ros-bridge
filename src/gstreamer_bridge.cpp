@@ -9,11 +9,6 @@ GstreamerRosBridge::GstreamerRosBridge(ros::NodeHandle &nh)
     nh.getParam("camera_height", camera_height);
     nh.getParam("camera_fps", camera_fps);
 
-    cap_ = cv::VideoCapture("/dev/video0", cv::CAP_V4L2);
-    cap_.set(cv::CAP_PROP_FRAME_WIDTH, camera_width);  // Set frame width
-    cap_.set(cv::CAP_PROP_FRAME_HEIGHT, camera_height); // Set frame height
-    cap_.set(cv::CAP_PROP_FPS, camera_fps);            // Set frame rate
-
     std::string gs_ip = "100.64.0.1";
     nh.getParam("ip", gs_ip);
 
@@ -28,23 +23,42 @@ GstreamerRosBridge::GstreamerRosBridge(ros::NodeHandle &nh)
     nh.getParam("mtu", mtu);
 
     setenv("GST_DEBUG", "3", 1); // somehow this helps with querying video position
-    std::ostringstream pipelineStream;
-    pipelineStream 
+    std::ostringstream cvCameraPipeline;  // gstreamer pipeline for openCV
+    cvCameraPipeline
+        << "v4l2src device=" << camera_location
+        << "video convert ! videoscale !"
+        << "video/x-raw,width=" << camera_width
+        << ",height=" << camera_height
+        << ",framerate=" << camera_fps << "/1 !"
+        << "x264enc speed-preset=ultrafast"
+        << "tune=zerolatency !"
+        << "rtph264pay ! appsink";
+
+    std::ostringstream udpPipeline;     // gstreamer pipeline for udp to peer
+    udpPipeline 
         << "appsrc ! videoconvert ! videoscale !"
         << " video/x-raw,width=" << gst_width_ 
         << ",height=" << gst_height_
         << ",framerate=" << gst_fps << "/1 !"
         << " x264enc bitrate=" << bitrate
         << " speed-preset=ultrafast tune=zerolatency !"
-        << " rtph264pay mtu=900 ! udpsink host=" << gs_ip
+        << " rtph264pay mtu=" << mtu << " !"
+        << " udpsink host=" << gs_ip
         << " port=" << gs_port
         << " sync=false";
 
-    std::string gstreamer_pipeline = pipelineStream.str();
-    nh.getParam("custom_pipeline", gstreamer_pipeline);
+    std::string camera_pipeline = cvCameraPipeline.str();
+    nh.getParam("custom_pipeline", camera_pipeline);
+
+    std::string gstreamer_pipeline = udpPipeline.str();
+    cap_ = cv::VideoCapture(camera_pipeline, cv::CAP_GSTREAMER);
+    if (!cap_.isOpened())
+    {
+        ROS_ERROR("Failed to open camera pipeline");
+        return;
+    }
         
     pipeline_.open(gstreamer_pipeline, cv::CAP_GSTREAMER, 0, gst_fps, cv::Size(gst_width_, gst_height_), true);
-    //pipeline_.open(gstreamer_pipeline, cv::CAP_GSTREAMER, true);
     if (!pipeline_.isOpened())
     {
         ROS_ERROR("Failed to open gstreamer pipeline");
