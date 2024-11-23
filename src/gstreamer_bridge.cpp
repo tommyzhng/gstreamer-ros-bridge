@@ -26,13 +26,11 @@ GstreamerRosBridge::GstreamerRosBridge(ros::NodeHandle &nh)
     std::ostringstream cvCameraPipeline;  // gstreamer pipeline for openCV
     cvCameraPipeline
         << "v4l2src device=" << camera_location
-        << "video convert ! videoscale !"
-        << "video/x-raw,width=" << camera_width
+        << " ! videoconvert ! videoscale !"
+        << " video/x-raw,width=" << camera_width
         << ",height=" << camera_height
         << ",framerate=" << camera_fps << "/1 !"
-        << "x264enc speed-preset=ultrafast"
-        << "tune=zerolatency !"
-        << "rtph264pay ! appsink";
+        << " appsink";
 
     std::ostringstream udpPipeline;     // gstreamer pipeline for udp to peer
     udpPipeline 
@@ -46,18 +44,21 @@ GstreamerRosBridge::GstreamerRosBridge(ros::NodeHandle &nh)
         << " udpsink host=" << gs_ip
         << " port=" << gs_port
         << " sync=false";
-
+    
+    // start the camera pipeline
     std::string camera_pipeline = cvCameraPipeline.str();
     nh.getParam("custom_pipeline", camera_pipeline);
-
-    std::string gstreamer_pipeline = udpPipeline.str();
     cap_ = cv::VideoCapture(camera_pipeline, cv::CAP_GSTREAMER);
     if (!cap_.isOpened())
     {
         ROS_ERROR("Failed to open camera pipeline");
         return;
     }
-        
+    std::string gst_topic = "/camera/image_rect";
+    nh.getParam("gst_topic", gst_topic);
+
+    // start the udp pipeline
+    std::string gstreamer_pipeline = udpPipeline.str();
     pipeline_.open(gstreamer_pipeline, cv::CAP_GSTREAMER, 0, gst_fps, cv::Size(gst_width_, gst_height_), true);
     if (!pipeline_.isOpened())
     {
@@ -65,9 +66,9 @@ GstreamerRosBridge::GstreamerRosBridge(ros::NodeHandle &nh)
         return;
     }
 
-    std::string gst_topic = "/camera/image_rect";
-    nh.getParam("gst_topic", gst_topic);
+    setCameraParams(); // set distortions and camera info
 
+    // ros subscribers and publishers
     gsImageSub_ = nh.subscribe(gst_topic, 1, &GstreamerRosBridge::gsImageCallback, this);
     rosCameraInfoPub_ = nh.advertise<sensor_msgs::CameraInfo>("/camera/camera_info", 1);
     rosImagePub_ = nh.advertise<sensor_msgs::Image>("/camera/image_rect", 1);
