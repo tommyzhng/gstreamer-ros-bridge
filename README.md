@@ -5,11 +5,12 @@ This package opens a camera stream onto a local ROS topic, allowing for any loca
 ## `gstreamer_bridge_node`
 
 This node initializes an H.264 v4l2 camera stream to a local ROS topic named /camera/image_rect.
-It then takes a ROS node specified by the `gst_topic` param and writes it to a custom GStreamer pipeline to the peer.
+It also takes a ROS node specified by the `gst_topic` param and writes it to a custom GStreamer pipeline to the peer.
 
 Params:
 - `camera_location`: Camera to start the stream to the local ROS topic. Default /dev/video0
-- `camera_width`, `camera_height`, `camera_fps`: Specifies the input stream parameters to the locally published ROS topic. This way higher resolution can be published to local processing nodes like April tags or CV. Default 1280, 720, 30.
+- `camera_width`, `camera_height`, `camera_fps`: Specifies the input stream parameters to the locally published ROS topic. This way higher resolution can be published to local processing nodes like April tags or CV. Default 1280, 720, 60.
+- `custom_pipline`: Fill in if a custom local camera pipeline is required. e.g IMX219 likes nvarguscamsrc on Jetson Orins.
 - `bitrate`, `mtu`: Specifies the bitrate and MTU of the GStreamer pipeline to the peer. Slower networks usually require lower bitrates so the network can keep up.
 - `gst_width`, `gst_height`, `gst_fps`: The GStreamer pipeline resolution and framerate. This allows decreased bandwidth after processing the image locally by sending a downscaled image to the peer for feedback purposes. Default 640, 360, 15.
 - `ip`, `port`: The Peer IP and port of the local stream. Default 100.64.0.3, 5602.
