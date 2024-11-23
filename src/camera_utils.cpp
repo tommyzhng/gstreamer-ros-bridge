@@ -14,10 +14,19 @@ void GstreamerRosBridge::setCameraParams()
 
 void GstreamerRosBridge::pubCameraImage()
 {
-    cap_ >> frame_;
-    if (frame_.empty())
-    {
-        ROS_ERROR("No image captured (its gg)");
+    // try grabbing a frame
+    if (!cap_.grab()) {
+        ROS_ERROR("Failed to grab a frame from the camera");
+        return; 
+    }
+
+    // retrieve the frame and update frame_
+    if (!cap_.retrieve(frame_)) {
+        ROS_ERROR("Failed to retrieve frame from the camera");
+        return;  
+    }
+    if (frame_.empty()) {
+        ROS_ERROR("No image captured (it's gg)");
         return;
     }
 	
