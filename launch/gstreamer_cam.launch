@@ -1,0 +1,13 @@
+<launch>
+    <node pkg="gstreamer_ros_bridge" type="gstreamer_cam_node" name="gstreamer_cam_node" output="screen">
+        <!--params for camera to local ros nodes -->
+        <param name="camera_location" value="/dev/video1"/>
+        <param name="camera_width" value="1280"/>
+        <param name="camera_height" value="720"/>
+        <param name="camera_fps" value="60"/>
+        <param name="camera_format" value="BGR"/>
+        <param name="camera_topic" value="/camera/image_rect"/>
+
+        <!-- <param name="custom_pipeline" value= > -->
+    </node>
+</launch>
