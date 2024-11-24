@@ -1,14 +1,7 @@
 #include "gstreamer_bridge.hpp"
 
-GstreamerRosBridge::GstreamerRosBridge(ros::NodeHandle &nh)
+GStreamerRosBridge::GStreamerRosBridge(ros::NodeHandle &nh)
 {
-    std::string camera_location = "/dev/video0";
-    nh.getParam("camera_location", camera_location);
-    int camera_width, camera_height, camera_fps;
-    nh.getParam("camera_width", camera_width);
-    nh.getParam("camera_height", camera_height);
-    nh.getParam("camera_fps", camera_fps);
-
     std::string gs_ip = "100.64.0.1";
     nh.getParam("ip", gs_ip);
 
@@ -23,14 +16,6 @@ GstreamerRosBridge::GstreamerRosBridge(ros::NodeHandle &nh)
     nh.getParam("mtu", mtu);
 
     setenv("GST_DEBUG", "3", 1); // somehow this helps with querying video position
-    std::ostringstream cvCameraPipeline;  // gstreamer pipeline for openCV
-    cvCameraPipeline
-        << "v4l2src device=" << camera_location
-        << " ! videoconvert ! videoscale !"
-        << " video/x-raw,width=" << camera_width
-        << ",height=" << camera_height
-        << ",framerate=" << camera_fps << "/1 !"
-        << " appsink";
 
     std::ostringstream udpPipeline;     // gstreamer pipeline for udp to peer
     udpPipeline 
@@ -45,15 +30,6 @@ GstreamerRosBridge::GstreamerRosBridge(ros::NodeHandle &nh)
         << " port=" << gs_port
         << " sync=false";
     
-    // start the camera pipeline
-    std::string camera_pipeline = cvCameraPipeline.str();
-    nh.getParam("custom_pipeline", camera_pipeline);
-    cap_ = cv::VideoCapture(camera_pipeline, cv::CAP_GSTREAMER);
-    if (!cap_.isOpened())
-    {
-        ROS_ERROR("Failed to open camera pipeline");
-        return;
-    }
     std::string gst_topic = "/camera/image_rect";
     nh.getParam("gst_topic", gst_topic);
 
@@ -66,36 +42,29 @@ GstreamerRosBridge::GstreamerRosBridge(ros::NodeHandle &nh)
         return;
     }
 
-    setCameraParams(); // set distortions and camera info
-
     // ros subscribers and publishers
-    gsImageSub_ = nh.subscribe(gst_topic, 1, &GstreamerRosBridge::gsImageCallback, this);
-    rosCameraInfoPub_ = nh.advertise<sensor_msgs::CameraInfo>("/camera/camera_info", 1);
-    rosImagePub_ = nh.advertise<sensor_msgs::Image>("/camera/image_rect", 1);
+    gsImageSub_ = nh.subscribe(gst_topic, 1, &GStreamerRosBridge::GsImageCallback, this);
 }
 
-GstreamerRosBridge::~GstreamerRosBridge()
+GStreamerRosBridge::~GStreamerRosBridge()
 {
-    cap_.release();
     pipeline_.release();
 }
 
-
-void GstreamerRosBridge::gsImageCallback(const sensor_msgs::ImageConstPtr &msg)
+void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
 {
+    if (!pipeline_.isOpened()) {
+        ROS_ERROR("GStreamer pipeline is not opened, unable to write image");
+        return;
+    }
     // write to gstreamer pipeline
     try {
         cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, "bgr8");
         cv::Mat image = cv_ptr->image;
-        cv::resize(image, image, cv::Size(gst_width_, gst_height_));
+        //cv::resize(image, image, cv::Size(gst_width_, gst_height_));
         image.convertTo(image, CV_8UC3);
         pipeline_.write(image);
     } catch (cv_bridge::Exception &e) {
         ROS_ERROR("cv_bridge exception: %s", e.what());
     }
-}
-
-void GstreamerRosBridge::Update()
-{
-    pubCameraImage();
 }
