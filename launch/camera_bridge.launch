@@ -1,0 +1,7 @@
+<launch>
+  <!-- Launch the gstreamer_cam.launch file -->
+  <include file="$(find gstreamer_ros_bridge)/launch/gstreamer_cam.launch"/>
+
+  <!-- Launch the gstreamer_bridge.launch file -->
+  <include file="$(find gstreamer_ros_bridge)/launch/gstreamer_bridge.launch"/>
+</launch>

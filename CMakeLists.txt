@@ -11,10 +11,10 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   sensor_msgs
-  cv_bridge
 )
 
 #find_package(Eigen3 REQUIRED)
+find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 # Find GStreamer
 find_package(PkgConfig REQUIRED)

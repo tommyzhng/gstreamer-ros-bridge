@@ -2,7 +2,8 @@
 #define GSTREAMER_ROS_BRIDGE_GSTREAMER_CAM_HPP
 
 #include <ros/ros.h>
-#include <opencv2/opencv.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <cstdlib>
@@ -37,13 +38,14 @@ private:
     */
     void PubCameraImage();
 
+    void ConvertImage(GstMapInfo &map_info, GstCaps *caps);
+
     sensor_msgs::CameraInfo cameraInfo_;
     ros::Publisher rosCameraInfoPub_;
     ros::Publisher rosImagePub_;
+    ros::NodeHandle nh_;
+    cv::Mat frame_; // published frame
 
-    // pipeline
-    cv::VideoCapture cap_;
-    //cv::Mat frame_;
 
     std::string camera_location_, camera_format_, camera_topic_;
     int camera_width_, camera_height_, camera_fps_;

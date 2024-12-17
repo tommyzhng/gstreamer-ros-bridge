@@ -2,15 +2,16 @@
 
 GStreamerCam::GStreamerCam(ros::NodeHandle &nh)
 {
-    nh.getParam("camera_location", camera_location_);
-    nh.getParam("camera_format", camera_format_);
-    nh.getParam("camera_width", camera_width_);
-    nh.getParam("camera_height", camera_height_);
-    nh.getParam("camera_fps", camera_fps_);
-    nh.getParam("camera_topic", camera_topic_);
+    nh_ = nh;
+    nh_.getParam("camera_location", camera_location_);
+    nh_.getParam("camera_format", camera_format_);
+    nh_.getParam("camera_width", camera_width_);
+    nh_.getParam("camera_height", camera_height_);
+    nh_.getParam("camera_fps", camera_fps_);
+    nh_.getParam("camera_topic", camera_topic_);
 
-    rosImagePub_ = nh.advertise<sensor_msgs::Image>("/camera/image_rect", 1);
-    rosCameraInfoPub_ = nh.advertise<sensor_msgs::CameraInfo>("/camera/camera_info", 1);
+    rosImagePub_ = nh_.advertise<sensor_msgs::Image>("/camera/image_rect", 1);
+    rosCameraInfoPub_ = nh_.advertise<sensor_msgs::CameraInfo>("/camera/camera_info", 1);
     
     // init the gstreamer pipeline
     InitializeGStreamer(); 
@@ -45,11 +46,16 @@ void GStreamerCam::InitializeGStreamer()
         << ",width=" << camera_width_
         << ",height=" << camera_height_
         << ",framerate=" << camera_fps_ << "/1 !"
-        << " appsink name=sink sync=false";
+        << " appsink name=sink sync=false drop=true max-buffers=1";
 
     std::string pipeline_str = camPipeline.str();
+
+    nh_.getParam("custom_pipeline", pipeline_str);  // load if there is a custom pipeline
     const gchar *pipeline_desc = pipeline_str.c_str();
+
+    
     pipeline_ = gst_parse_launch(pipeline_desc, NULL);
+    ROS_INFO("GStreamer pipeline: %s", pipeline_desc);
 
     if (!pipeline_) {
         ROS_ERROR("Pipeline was not opened.");
@@ -75,7 +81,14 @@ void GStreamerCam::PubCameraImage()
         //get the buffer from the sample
         GstBuffer *buffer = gst_sample_get_buffer(sample);
         if (!buffer) {
-            ROS_WARN("Failed to get GstBuffer from sample.");
+            ROS_WARN("Failed to get GstBuffer from sample");
+            gst_sample_unref(sample);
+            return;
+        }
+
+        GstCaps *caps = gst_sample_get_caps(sample);
+        if (!caps) {
+            ROS_WARN("Failed to get GstCaps from sample");
             gst_sample_unref(sample);
             return;
         }
@@ -83,26 +96,28 @@ void GStreamerCam::PubCameraImage()
         // map the buffer to access the data
         GstMapInfo map_info;
         if (!gst_buffer_map(buffer, &map_info, GST_MAP_READ)) {
-            ROS_WARN("Failed to map GstBuffer.");
+            ROS_WARN("Failed to map GstBuffer");
             gst_sample_unref(sample);
             return;
         }
 
-        // Validate the size of the mapped data
-        if (map_info.size != 1280 * 720 * 3) {
-            ROS_WARN("Unexpected buffer size: %zu. Expected: %d.", map_info.size, 1280 * 720 * 3);
+        // check if empty
+        if (!map_info.data) {
+            ROS_WARN("Buffer data is null");
             gst_buffer_unmap(buffer, &map_info);
             gst_sample_unref(sample);
             return;
         }
-
-        cv::Mat frame(camera_height_, camera_width_, CV_8UC3, (void*)map_info.data);
-
+        // convert to readable format by cv_bridge
+        ConvertImage(map_info, caps);
+        
         try {
-            sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
+            sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame_).toImageMsg();
             ros::Time current_time = ros::Time::now();
+            
             msg->header.stamp = current_time;
             rosImagePub_.publish(msg);
+
             cameraInfo_.header.stamp = current_time;
             rosCameraInfoPub_.publish(cameraInfo_);
         } catch (const std::exception &e) {
@@ -113,6 +128,40 @@ void GStreamerCam::PubCameraImage()
         gst_sample_unref(sample);
     } else {
         ROS_WARN("Failed to get frame from appsink");
+    }
+}
+
+void GStreamerCam::ConvertImage(GstMapInfo &map_info, GstCaps *caps)
+{
+    // detect what type of image it is
+    GstStructure *s = gst_caps_get_structure(caps, 0);
+    const gchar *format = gst_structure_get_string(s, "format");
+
+    if (!format) {
+        ROS_WARN("Failed to retrieve format from caps.");
+        return;
+    }
+
+    if (g_strcmp0(format, "NV12") == 0) {
+        // NV12: YUV 4:2:0, semi-planar
+        cv::Mat nv12(camera_height_ + camera_height_ / 2, camera_width_, CV_8UC1, (void*)map_info.data);
+        cv::cvtColor(nv12, frame_, cv::COLOR_YUV2BGR_NV12);
+    } else if (g_strcmp0(format, "YUY2") == 0) {
+        // YUY2: YUV 4:2:2
+        cv::Mat yuy2(camera_height_, camera_width_, CV_8UC2, (void*)map_info.data);
+        cv::cvtColor(yuy2, frame_, cv::COLOR_YUV2BGR_YUY2);
+    } else if (g_strcmp0(format, "RGB") == 0 || g_strcmp0(format, "BGR") == 0) {
+        // RGB/BGR formats (just clone it bc its supported)
+        int channels = 3;
+        cv::Mat img(camera_height_, camera_width_, CV_8UC3, (void*)map_info.data);
+        frame_ = img.clone();
+    } else if (g_strcmp0(format, "GRAY8") == 0) {
+        // Grayscale format
+        cv::Mat gray(camera_height_, camera_width_, CV_8UC1, (void*)map_info.data);
+        cv::cvtColor(gray, frame_, cv::COLOR_GRAY2BGR);
+    } else {
+        ROS_WARN("Unsupported camera format: %s", format);
+        return;
     }
 }
 
