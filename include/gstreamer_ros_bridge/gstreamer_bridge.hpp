@@ -18,6 +18,8 @@ class GStreamerRosBridge
 public:
     GStreamerRosBridge(ros::NodeHandle &nh);
     ~GStreamerRosBridge();
+    // ros_rate for fps workaround
+    ros::Rate ros_rate_{30};
 private:
     /**
     * @brief function to recieve from ros image topic and publish to pipeline to peer 
@@ -33,6 +35,8 @@ private:
 
     // gstreamer param member vars
     int gst_width_{640}, gst_height_{480};
+
+
 };
 
 #endif //GSTREAMER_ROS_BRIDGE_GSTREAMER_BRIDGE_HPP
