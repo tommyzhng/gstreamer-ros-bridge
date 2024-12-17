@@ -11,10 +11,10 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   sensor_msgs
-  cv_bridge
 )
 
 #find_package(Eigen3 REQUIRED)
+find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 # Find GStreamer
 find_package(PkgConfig REQUIRED)
@@ -31,14 +31,31 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${GSTREAMER_INCLUDE_DIRS}
+  ${GSTAPP_INCLUDE_DIRS}   # include headers from gstapp
 )
 
-add_library(gstreamer_ros_bridge src/gstreamer_bridge.cpp src/gstreamer_publisher.cpp src/camera_utils.cpp)
+link_directories(
+  ${GSTREAMER_LIBRARY_DIRS}
+  ${GSTAPP_LIBRARY_DIRS}   # link gstapp library
+  ${OpenCV_LIBRARY_DIRS}   
+)
+
+add_library(gstreamer_ros_bridge src/gstreamer_bridge.cpp src/gstreamer_publisher.cpp src/gstreamer_cam.cpp)
 target_include_directories(gstreamer_ros_bridge PUBLIC include)
 target_compile_features(gstreamer_ros_bridge PUBLIC cxx_std_17)
 
 target_include_directories(gstreamer_ros_bridge PRIVATE ${GST_INCLUDE_DIRS})
 target_link_libraries(gstreamer_ros_bridge ${GST_LIBRARIES} ${OpenCV_LIBRARIES} ${cv_bridge_LIBRARIES})
+
+# node executables
+add_executable(gstreamer_cam_node src/gstreamer_cam_node.cpp)
+target_link_libraries(gstreamer_cam_node PUBLIC 
+  ${catkin_LIBRARIES} 
+  ${GSTREAMER_LIBRARIES} 
+  ${GSTAPP_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  gstreamer_ros_bridge)
+add_dependencies(gstreamer_cam_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(gstreamer_bridge_node src/gstreamer_bridge_node.cpp)
 target_link_libraries(gstreamer_bridge_node PUBLIC ${catkin_LIBRARIES} gstreamer_ros_bridge)
