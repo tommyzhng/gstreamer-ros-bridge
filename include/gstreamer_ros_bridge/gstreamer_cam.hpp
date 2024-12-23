@@ -48,7 +48,6 @@ private:
     // null gchar initialization
     const gchar *format_{nullptr};
 
-
     std::string camera_location_, camera_format_, camera_topic_;
     int camera_width_, camera_height_, camera_fps_;
 };

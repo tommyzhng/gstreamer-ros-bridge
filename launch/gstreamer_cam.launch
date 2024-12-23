@@ -14,5 +14,14 @@
         "v4l2src device=/dev/video0 ! videoconvert ! videoscale ! video/x-raw,width=1280,height=720,framerate=60/1 !
          appsink name=sink sync=false"
         /> -->
-    </node>
+
+        <!-- Jetson nano IMX219 pipeline  -->
+        <param name="custom_pipeline" value= 
+        "nvarguscamerasrc sensor-mode=4 !
+        video/x-raw(memory:NVMM),width=1280,height=720,format=NV12,framerate=30/1 !
+        nvvidconv ! video/x-raw,format=RGBA,width=1280,height=720 !
+        videoconvert ! video/x-raw,format=RGB !
+        appsink name=sink sync=false" />
+        </node>
+
 </launch>

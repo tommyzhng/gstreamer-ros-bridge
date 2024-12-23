@@ -9,7 +9,7 @@
         <param name="gst_topic" value="/camera/image_rect"/>
 
         <!--target ip and port-->
-        <param name="ip" value="10.7.0.3"/>
+        <param name="ip" value="100.64.0.1"/>
         <param name="port" value="5602"/>
     </node>
 </launch>

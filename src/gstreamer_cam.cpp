@@ -75,8 +75,7 @@ void GStreamerCam::InitializeGStreamer()
 
 void GStreamerCam::PubCameraImage()
 {
-    GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink_));
-
+    GstSample *sample = gst_app_sink_try_pull_sample(GST_APP_SINK(appsink_), GST_SECOND);
     if (sample) {
         //get the buffer from the sample
         GstBuffer *buffer = gst_sample_get_buffer(sample);
@@ -85,7 +84,6 @@ void GStreamerCam::PubCameraImage()
             gst_sample_unref(sample);
             return;
         }
-
         // map the buffer to access the data
         GstMapInfo map_info;
         if (!gst_buffer_map(buffer, &map_info, GST_MAP_READ)) {
@@ -93,7 +91,6 @@ void GStreamerCam::PubCameraImage()
             gst_sample_unref(sample);
             return;
         }
-
         // check format
         if (!format_) {
             GstCaps *caps = gst_sample_get_caps(sample);
@@ -105,6 +102,7 @@ void GStreamerCam::PubCameraImage()
             // get the format from the caps
             GstStructure *s = gst_caps_get_structure(caps, 0);
             format_ = gst_structure_get_string(s, "format");
+            ROS_INFO("Camera format: %s", format_);
             if (!format_) {
                 ROS_WARN("Failed to get format from caps");
                 gst_sample_unref(sample);
@@ -121,7 +119,6 @@ void GStreamerCam::PubCameraImage()
         }
         // convert to readable format by cv_bridge
         ConvertImage(map_info);
-        
         try {
             sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame_).toImageMsg();
             ros::Time current_time = ros::Time::now();

@@ -32,6 +32,7 @@ private:
 
     // gstreamer pipeline
     cv::VideoWriter pipeline_;
+    cv::Mat frame_;
 
     // gstreamer param member vars
     int gst_width_{640}, gst_height_{480};
