@@ -1,5 +1,5 @@
 #include "gstreamer_bridge.hpp"
-
+#include <chrono>
 // function to replace opencv resize since it seg faults in version 4.2 
 cv::Mat resizeAndPad(cv::Mat &image, int target_width, int target_height) {
     if (image.empty()) {
@@ -48,7 +48,6 @@ cv::Mat resizeAndPad(cv::Mat &image, int target_width, int target_height) {
     image.release();
     return padded_image;
 }
-
 GStreamerRosBridge::GStreamerRosBridge(ros::NodeHandle &nh)
 {
     std::string gs_ip = "100.64.0.1";
@@ -73,7 +72,7 @@ GStreamerRosBridge::GStreamerRosBridge(ros::NodeHandle &nh)
         << ",height=" << gst_height_
         << ",framerate=" << gst_fps << "/1 !"
         << " x264enc bitrate=" << bitrate
-        << " speed-preset=ultrafast tune=zerolatency !"
+        << " speed-preset=ultrafast tune=zerolatency byte-stream=true key-int-max=15 intra-refresh=true !"
         << " rtph264pay mtu=" << mtu << " !"
         << " udpsink host=" << gs_ip
         << " port=" << gs_port
@@ -92,7 +91,7 @@ GStreamerRosBridge::GStreamerRosBridge(ros::NodeHandle &nh)
     }
 
     // local image subscriber
-    gsImageSub_ = nh.subscribe(gst_topic, 1, &GStreamerRosBridge::GsImageCallback, this);
+    gsImageSub_ = nh.subscribe(gst_topic, 1, &GStreamerRosBridge::GsImageCallback, this, ros::TransportHints().tcpNoDelay());
 }
 
 GStreamerRosBridge::~GStreamerRosBridge()
@@ -111,18 +110,17 @@ void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
         return;
     }   
     // write to gstreamer pipeline
-    cv::Mat image;
     try {
         cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, "bgr8");
-        image = cv_ptr->image;
+        frame_ = cv_ptr->image;
     } catch (cv_bridge::Exception &e) {
         ROS_ERROR("cv_bridge exception: %s", e.what());
     }
     // check if image needs to be resized
-    if (image.cols != gst_width_ || image.rows != gst_height_){
-        image = resizeAndPad(image, gst_width_, gst_height_);
+    if (frame_.cols != gst_width_ || frame_.rows != gst_height_){
+        frame_ = resizeAndPad(frame_, gst_width_, gst_height_);
     }
-    pipeline_.write(image);
-    image.release();
+    pipeline_.write(frame_);
+    frame_.release();
 }
 
