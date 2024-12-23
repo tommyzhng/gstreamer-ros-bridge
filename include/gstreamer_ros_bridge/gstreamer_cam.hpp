@@ -38,13 +38,15 @@ private:
     */
     void PubCameraImage();
 
-    void ConvertImage(GstMapInfo &map_info, GstCaps *caps);
+    void ConvertImage(GstMapInfo &map_info);
 
     sensor_msgs::CameraInfo cameraInfo_;
     ros::Publisher rosCameraInfoPub_;
     ros::Publisher rosImagePub_;
     ros::NodeHandle nh_;
     cv::Mat frame_; // published frame
+    // null gchar initialization
+    const gchar *format_{nullptr};
 
 
     std::string camera_location_, camera_format_, camera_topic_;
