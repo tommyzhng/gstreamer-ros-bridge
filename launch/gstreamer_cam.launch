@@ -1,16 +1,18 @@
 <launch>
     <node pkg="gstreamer_ros_bridge" type="gstreamer_cam_node" name="gstreamer_cam_node" output="screen">
-        <!--params for camera to local ros nodes -->
-        <param name="camera_location" value="/dev/video2"/>
+        <!--params for camera a default v4l2 pipeline. Fill these in even if you are using a custom pipeline
+        If using custom pipeline, ensure location, width, height, & fps are the same-->
+        <param name="camera_location" value="/dev/video0"/>
         <param name="camera_width" value="1280"/>
         <param name="camera_height" value="720"/>
-        <param name="camera_fps" value="60"/>
-        <param name="camera_format" value="BGR"/>
+        <param name="camera_fps" value="30"/>
+        <param name="camera_format" value="BGR"/> 
         <param name="camera_topic" value="/camera/image_rect"/>
-
-        <param name="custom_pipeline" value= 
-        "v4l2src device=/dev/video1 ! videoconvert ! videoscale ! video/x-raw,width=1280,height=720,framerate=60/1 !
+        
+        <!-- Custom Gstreamer pipeline. Uncomment to use. -->
+        <!-- <param name="custom_pipeline" value= 
+        "v4l2src device=/dev/video0 ! videoconvert ! videoscale ! video/x-raw,width=1280,height=720,framerate=60/1 !
          appsink name=sink sync=false"
-        />
+        /> -->
     </node>
 </launch>

@@ -91,7 +91,7 @@ GStreamerRosBridge::GStreamerRosBridge(ros::NodeHandle &nh)
         return;
     }
 
-    // ros subscribers and publishers
+    // local image subscriber
     gsImageSub_ = nh.subscribe(gst_topic, 1, &GStreamerRosBridge::GsImageCallback, this);
 }
 
@@ -118,8 +118,10 @@ void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
     } catch (cv_bridge::Exception &e) {
         ROS_ERROR("cv_bridge exception: %s", e.what());
     }
-    image.convertTo(image, CV_8UC3);
-    image = resizeAndPad(image, gst_width_, gst_height_);
+    // check if image needs to be resized
+    if (image.cols != gst_width_ || image.rows != gst_height_){
+        image = resizeAndPad(image, gst_width_, gst_height_);
+    }
     pipeline_.write(image);
     image.release();
 }
