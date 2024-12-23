@@ -86,19 +86,30 @@ void GStreamerCam::PubCameraImage()
             return;
         }
 
-        GstCaps *caps = gst_sample_get_caps(sample);
-        if (!caps) {
-            ROS_WARN("Failed to get GstCaps from sample");
-            gst_sample_unref(sample);
-            return;
-        }
-
         // map the buffer to access the data
         GstMapInfo map_info;
         if (!gst_buffer_map(buffer, &map_info, GST_MAP_READ)) {
             ROS_WARN("Failed to map GstBuffer");
             gst_sample_unref(sample);
             return;
+        }
+
+        // check format
+        if (!format_) {
+            GstCaps *caps = gst_sample_get_caps(sample);
+            if (!caps) {
+                ROS_WARN("Failed to get GstCaps from sample");
+                gst_sample_unref(sample);
+                return;
+            }
+            // get the format from the caps
+            GstStructure *s = gst_caps_get_structure(caps, 0);
+            format_ = gst_structure_get_string(s, "format");
+            if (!format_) {
+                ROS_WARN("Failed to get format from caps");
+                gst_sample_unref(sample);
+                return;
+            }
         }
 
         // check if empty
@@ -109,7 +120,7 @@ void GStreamerCam::PubCameraImage()
             return;
         }
         // convert to readable format by cv_bridge
-        ConvertImage(map_info, caps);
+        ConvertImage(map_info);
         
         try {
             sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame_).toImageMsg();
@@ -131,36 +142,27 @@ void GStreamerCam::PubCameraImage()
     }
 }
 
-void GStreamerCam::ConvertImage(GstMapInfo &map_info, GstCaps *caps)
+void GStreamerCam::ConvertImage(GstMapInfo &map_info)
 {
-    // detect what type of image it is
-    GstStructure *s = gst_caps_get_structure(caps, 0);
-    const gchar *format = gst_structure_get_string(s, "format");
-
-    if (!format) {
-        ROS_WARN("Failed to retrieve format from caps.");
-        return;
-    }
-
-    if (g_strcmp0(format, "NV12") == 0) {
+    if (g_strcmp0(format_, "NV12") == 0) {
         // NV12: YUV 4:2:0, semi-planar
         cv::Mat nv12(camera_height_ + camera_height_ / 2, camera_width_, CV_8UC1, (void*)map_info.data);
         cv::cvtColor(nv12, frame_, cv::COLOR_YUV2BGR_NV12);
-    } else if (g_strcmp0(format, "YUY2") == 0) {
+    } else if (g_strcmp0(format_, "YUY2") == 0) {
         // YUY2: YUV 4:2:2
         cv::Mat yuy2(camera_height_, camera_width_, CV_8UC2, (void*)map_info.data);
         cv::cvtColor(yuy2, frame_, cv::COLOR_YUV2BGR_YUY2);
-    } else if (g_strcmp0(format, "RGB") == 0 || g_strcmp0(format, "BGR") == 0) {
+    } else if (g_strcmp0(format_, "RGB") == 0 || g_strcmp0(format_, "BGR") == 0) {
         // RGB/BGR formats (just clone it bc its supported)
         int channels = 3;
         cv::Mat img(camera_height_, camera_width_, CV_8UC3, (void*)map_info.data);
         frame_ = img.clone();
-    } else if (g_strcmp0(format, "GRAY8") == 0) {
+    } else if (g_strcmp0(format_, "GRAY8") == 0) {
         // Grayscale format
         cv::Mat gray(camera_height_, camera_width_, CV_8UC1, (void*)map_info.data);
         cv::cvtColor(gray, frame_, cv::COLOR_GRAY2BGR);
     } else {
-        ROS_WARN("Unsupported camera format: %s", format);
+        ROS_WARN("Unsupported camera format: %s", format_);
         return;
     }
 }
