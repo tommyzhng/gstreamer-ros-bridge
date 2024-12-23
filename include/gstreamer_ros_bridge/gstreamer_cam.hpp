@@ -25,7 +25,7 @@ public:
     GstElement *appsink_;
 
 private:
-    /**sensor_msgs
+    /**
     * @brief set cam params for camera/camera_info 
     */
     void SetCameraParams();
