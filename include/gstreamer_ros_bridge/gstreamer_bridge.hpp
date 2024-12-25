@@ -2,56 +2,42 @@
 #define GSTREAMER_ROS_BRIDGE_GSTREAMER_BRIDGE_HPP
 
 #include <ros/ros.h>
-#include <image_transport/image_transport.h>
-#include <sensor_msgs/CompressedImage.h>
+#include <sensor_msgs/Image.h>
 #include <gst/gst.h>
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <cstdlib>
 
-
 /* 
     this node takes a image rostopic and pushes it through a gstreamer pipeline
-    it also starts a video feed from the camera and pushes it onto a camera node for other topics to digest
 */
 
-class GstreamerRosBridge
+class GStreamerRosBridge
 {
 public:
-    GstreamerRosBridge(ros::NodeHandle &nh);
-    ~GstreamerRosBridge();
-    void Update();
+    GStreamerRosBridge(ros::NodeHandle &nh);
+    ~GStreamerRosBridge();
+    // ros_rate for fps workaround
+    ros::Rate ros_rate_{30};
 private:
-    /**
-    * @brief set cam params for camera/camera_info 
-    */
-    void setCameraParams();
-
-    /** 
-    * @brief images from camera onto camera/image_rect
-    */
-    void pubCameraImage();
-
     /**
     * @brief function to recieve from ros image topic and publish to pipeline to peer 
     * @param msg - image message from ros
     * @return void
     */    
-    void gsImageCallback(const sensor_msgs::ImageConstPtr &msg);
-
-    ros::Subscriber gsImageSub_;
-    ros::Publisher rosCameraInfoPub_;
-    ros::Publisher rosImagePub_;
-    sensor_msgs::CameraInfo cameraInfo_;
-    ros::NodeHandle nh_;
+    void GsImageCallback(const sensor_msgs::ImageConstPtr &msg);
     
+    ros::Subscriber gsImageSub_;
+
     // gstreamer pipeline
-    cv::VideoCapture cap_;
     cv::VideoWriter pipeline_;
+    cv::Mat frame_;
 
     // gstreamer param member vars
     int gst_width_{640}, gst_height_{480};
+
+
 };
 
 #endif //GSTREAMER_ROS_BRIDGE_GSTREAMER_BRIDGE_HPP
