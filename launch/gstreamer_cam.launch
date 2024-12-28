@@ -5,7 +5,7 @@
         <param name="camera_location" value="/dev/video0"/>
         <param name="camera_width" value="1280"/>
         <param name="camera_height" value="720"/>
-        <param name="camera_fps" value="30"/>
+        <param name="camera_fps" value="60"/>
         <param name="camera_format" value="BGR"/> 
         <param name="camera_topic" value="/camera/image_rect"/>
         
@@ -15,15 +15,29 @@
          appsink name=sink sync=false"
         /> -->
 
-        <!-- Jetson nano IMX219 pipeline  -->
+        <!-- Jetson nano Luxonis Minimal CPU pipeline  -->
         <!-- <param name="custom_pipeline" value= 
+            "v4l2src device=/dev/video0 ! 
+            videoscale ! 
+            video/x-raw,width=1280,height=720,framerate=60/1 ! 
+            nvvidconv ! 
+            video/x-raw(memory:NVMM),format=RGBA ! 
+            nvvidconv ! 
+            video/x-raw,format=RGBA ! 
+            videoconvert ! 
+            video/x-raw,format=BGR ! 
+            appsink name=sink sync=false"
+        /> -->
+
+        <!-- Jetson nano IMX219 pipeline  -->
+        <param name="custom_pipeline" value= 
         "nvarguscamerasrc sensor-mode=4 !
         video/x-raw(memory:NVMM),width=1280,height=720,format=NV12,framerate=30/1 !
         nvvidconv ! video/x-raw,format=RGBA,width=1280,height=720 !
-        videoconvert ! video/x-raw,format=RGB !
+        videoconvert ! video/x-raw,format=BGR !
         appsink name=sink sync=false" />
-        </node> -->
+        
 
         <!-- Libcamera pipeline -->
-
+     </node>
 </launch>
