@@ -11,7 +11,6 @@ int main(int argc, char **argv)
 
     while (ros::ok())
     {
-        cam.Update();
         ros::spinOnce();
         rate.sleep();
     }

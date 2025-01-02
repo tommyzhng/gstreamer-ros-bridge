@@ -5,8 +5,8 @@
         <param name="mtu" value="500"/>
         <param name="gst_width" value="1280"/>
         <param name="gst_height" value="720"/>
-        <param name="gst_fps" value="30"/>
-        <param name="gst_topic" value="/camera/image_raw/compressed"/>
+        <param name="gst_fps" value="60"/>
+        <param name="gst_topic" value="/camera/image_rect"/>
 
         <!--target ip and port-->
         <param name="ip" value="100.64.0.1"/>
