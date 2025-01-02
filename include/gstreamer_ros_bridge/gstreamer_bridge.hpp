@@ -26,7 +26,7 @@ private:
     * @param msg - image message from ros
     * @return void
     */    
-    void GsImageCallback(const sensor_msgs::ImageConstPtr &msg);
+    void GsImageCallback(const sensor_msgs::CompressedImageConstPtr &msg);
     
     ros::Subscriber gsImageSub_;
 

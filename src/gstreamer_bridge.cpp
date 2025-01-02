@@ -99,28 +99,38 @@ GStreamerRosBridge::~GStreamerRosBridge()
     pipeline_.release();
 }
 
-void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
+void GStreamerRosBridge::GsImageCallback(const sensor_msgs::CompressedImageConstPtr &msg)
 {
-    // if (!pipeline_.isOpened()) {
-    //     ROS_ERROR("GStreamer pipeline is not opened, unable to write image");
-    //     return;
-    // }
-    // if (!msg) {
-    //     ROS_ERROR("Received an empty image message.");
-    //     return;
-    // }   
-    // // write to gstreamer pipeline
-    // try {
-    //     cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, "bgr8");
-    //     frame_ = cv_ptr->image;
-    // } catch (cv_bridge::Exception &e) {
-    //     ROS_ERROR("cv_bridge exception: %s", e.what());
-    // }
-    // // check if image needs to be resized
-    // if (frame_.cols != gst_width_ || frame_.rows != gst_height_){
-    //     frame_ = resizeAndPad(frame_, gst_width_, gst_height_);
-    // }
-    // pipeline_.write(frame_);
-    //frame_.release();
+    if (!pipeline_.isOpened()) {
+        ROS_ERROR("GStreamer pipeline is not opened, unable to write image");
+        return;
+    }
+    if (!msg) {
+        ROS_ERROR("Received an empty image message.");
+        return;
+    }   
+    // write to gstreamer pipeline
+      try {
+        // Decode the compressed image into an OpenCV Mat
+        auto start = std::chrono::high_resolution_clock::now();
+
+        cv::Mat compressedImage = cv::imdecode(cv::Mat(msg->data), cv::IMREAD_COLOR);
+        auto decode_end = std::chrono::high_resolution_clock::now();
+
+        if (compressedImage.empty()) {
+            ROS_ERROR("Failed to decode the compressed image.");
+            return;
+        }
+
+        // If needed, resize the image
+        if (compressedImage.cols != gst_width_ || compressedImage.rows != gst_height_) {
+            compressedImage = resizeAndPad(compressedImage, gst_width_, gst_height_);
+        }
+
+        // Write to the GStreamer pipeline
+        pipeline_.write(compressedImage);
+    } catch (const std::exception &e) {
+        ROS_ERROR("Exception while processing compressed image: %s", e.what());
+    }
 }
 

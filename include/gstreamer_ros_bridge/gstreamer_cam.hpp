@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
+#include <image_transport/image_transport.h>
 
 /* 
     this node starts a gstreamer video feed from the camera and pushes it onto a camera topic
@@ -42,8 +43,9 @@ private:
 
     sensor_msgs::CameraInfo cameraInfo_;
     ros::Publisher rosCameraInfoPub_;
-    ros::Publisher rosImagePub_;
+    image_transport::Publisher rosImagePub_;
     ros::NodeHandle nh_;
+    image_transport::ImageTransport it_;
     cv::Mat frame_; // published frame
     // null gchar initialization
     const gchar *format_{nullptr};

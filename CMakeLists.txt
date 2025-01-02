@@ -11,10 +11,11 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   sensor_msgs
+  image_transport
+  cv_bridge
 )
 
 #find_package(Eigen3 REQUIRED)
-find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 # Find GStreamer
 find_package(PkgConfig REQUIRED)
@@ -45,7 +46,7 @@ target_include_directories(gstreamer_ros_bridge PUBLIC include)
 target_compile_features(gstreamer_ros_bridge PUBLIC cxx_std_17)
 
 target_include_directories(gstreamer_ros_bridge PRIVATE ${GST_INCLUDE_DIRS})
-target_link_libraries(gstreamer_ros_bridge ${GST_LIBRARIES} ${OpenCV_LIBRARIES} ${cv_bridge_LIBRARIES})
+target_link_libraries(gstreamer_ros_bridge ${GST_LIBRARIES} ${OpenCV_LIBRARIES} ${cv_bridge_LIBRARIES} ${catkin_LIBRARIES})
 
 # node executables
 add_executable(gstreamer_cam_node src/gstreamer_cam_node.cpp)
@@ -66,5 +67,5 @@ target_link_libraries(gstreamer_publisher_node PUBLIC ${catkin_LIBRARIES} gstrea
 add_dependencies(gstreamer_publisher_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 catkin_package(
-  CATKIN_DEPENDS roscpp std_msgs
+  CATKIN_DEPENDS roscpp std_msgs image_transport
 )

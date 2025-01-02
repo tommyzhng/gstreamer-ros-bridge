@@ -1,8 +1,8 @@
 #include "gstreamer_cam.hpp"
 
 GStreamerCam::GStreamerCam(ros::NodeHandle &nh)
+    : nh_(nh), it_(nh)
 {
-    nh_ = nh;
     nh_.getParam("camera_location", camera_location_);
     nh_.getParam("camera_format", camera_format_);
     nh_.getParam("camera_width", camera_width_);
@@ -10,8 +10,10 @@ GStreamerCam::GStreamerCam(ros::NodeHandle &nh)
     nh_.getParam("camera_fps", camera_fps_);
     nh_.getParam("camera_topic", camera_topic_);
 
-    rosImagePub_ = nh_.advertise<sensor_msgs::Image>("/camera/image_rect", 1);
+    // rosImagePub_ = nh_.advertise<sensor_msgs::Image>("/camera/image_rect", 1);
+    rosImagePub_ = it_.advertise("/camera/image_raw", 1);
     rosCameraInfoPub_ = nh_.advertise<sensor_msgs::CameraInfo>("/camera/camera_info", 1);
+
     
     // init the gstreamer pipeline
     InitializeGStreamer(); 
