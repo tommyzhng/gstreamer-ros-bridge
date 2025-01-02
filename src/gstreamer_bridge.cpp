@@ -66,18 +66,17 @@ namespace gstreamer_ros_bridge
         nh.getParam("gst_fps", gst_fps);
         nh.getParam("bitrate", bitrate);
         nh.getParam("mtu", mtu);
-        ros_rate_ = ros::Rate(gst_fps);  // update ros rate
 
         setenv("GST_DEBUG", "3", 1); // somehow this helps with querying video position
 
         std::ostringstream udpPipeline;     // gstreamer pipeline for udp to peer
         udpPipeline 
-            << "appsrc ! videoconvert ! videoscale !"
+            << "appsrc is-live=true ! videoconvert ! videoscale !"
             << " video/x-raw,width=" << gst_width_ 
             << ",height=" << gst_height_
             << ",framerate=" << gst_fps << "/1 !"
             << " x264enc bitrate=" << bitrate
-            << " speed-preset=ultrafast tune=zerolatency byte-stream=true key-int-max=15 intra-refresh=true !"
+            << " speed-preset=ultrafast tune=zerolatency threads=4 !"
             << " rtph264pay mtu=" << mtu << " !"
             << " udpsink host=" << gs_ip
             << " port=" << gs_port
@@ -126,6 +125,5 @@ namespace gstreamer_ros_bridge
             frame_ = resizeAndPad(frame_, gst_width_, gst_height_);
         }
         pipeline_.write(frame_);
-        frame_.release();
     }
 } // namespace gstreamer_ros_bridge
