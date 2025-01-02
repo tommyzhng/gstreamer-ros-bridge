@@ -116,7 +116,7 @@ namespace gstreamer_ros_bridge
         }   
         // write to gstreamer pipeline
         try {
-            cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+            cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
             frame_ = cv_ptr->image;
         } catch (cv_bridge::Exception &e) {
             ROS_ERROR("cv_bridge exception: %s", e.what());
