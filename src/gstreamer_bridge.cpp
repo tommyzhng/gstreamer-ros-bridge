@@ -1,6 +1,5 @@
 #include "gstreamer_bridge.hpp"
-#include <chrono>
-// function to replace opencv resize since it seg faults in version 4.2 
+
 cv::Mat resizeAndPad(cv::Mat &image, int target_width, int target_height) {
     if (image.empty()) {
         ROS_ERROR("Input image is empty");
@@ -34,8 +33,7 @@ cv::Mat resizeAndPad(cv::Mat &image, int target_width, int target_height) {
             int orig_x = int(x * float(image.cols) / new_width);
             int orig_y = int(y * float(image.rows) / new_height);
 
-            // Bounds checking: Ensure we are not accessing out-of-bounds pixels
-            orig_x = std::min(orig_x, image.cols - 1);
+            orig_x = std::min(orig_x, image.cols - 1);   // Prevent out of bounds
             orig_y = std::min(orig_y, image.rows - 1);
 
             // Use ptr to access the original image pixels efficiently
@@ -63,16 +61,14 @@ GStreamerRosBridge::GStreamerRosBridge(ros::NodeHandle &nh)
     nh.getParam("mtu", mtu);
     ros_rate_ = ros::Rate(gst_fps);  // update ros rate
 
-    setenv("GST_DEBUG", "3", 1); // somehow this helps with querying video position
-
     std::ostringstream udpPipeline;     // gstreamer pipeline for udp to peer
     udpPipeline 
-        << "appsrc ! videoconvert ! videoscale !"
+        << "appsrc ! queue ! videoconvert ! videoscale !"
         << " video/x-raw,width=" << gst_width_ 
         << ",height=" << gst_height_
         << ",framerate=" << gst_fps << "/1 !"
         << " x264enc bitrate=" << bitrate
-        << " speed-preset=ultrafast tune=zerolatency byte-stream=true key-int-max=15 intra-refresh=true !"
+        << " speed-preset=ultrafast tune=zerolatency !"
         << " rtph264pay mtu=" << mtu << " !"
         << " udpsink host=" << gs_ip
         << " port=" << gs_port
@@ -90,7 +86,6 @@ GStreamerRosBridge::GStreamerRosBridge(ros::NodeHandle &nh)
         return;
     }
 
-    // local image subscriber
     gsImageSub_ = nh.subscribe(gst_topic, 1, &GStreamerRosBridge::GsImageCallback, this, ros::TransportHints().tcpNoDelay());
 }
 
@@ -111,7 +106,7 @@ void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
     }   
     // write to gstreamer pipeline
     try {
-        cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, "bgr8");
+        cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
         frame_ = cv_ptr->image;
     } catch (cv_bridge::Exception &e) {
         ROS_ERROR("cv_bridge exception: %s", e.what());
