@@ -61,6 +61,8 @@ GStreamerRosBridge::GStreamerRosBridge(ros::NodeHandle &nh)
     nh.getParam("mtu", mtu);
     ros_rate_ = ros::Rate(gst_fps);  // update ros rate
 
+    setenv("GST_DEBUG", "3", 1);
+    
     std::ostringstream udpPipeline;     // gstreamer pipeline for udp to peer
     udpPipeline 
         << "appsrc ! queue ! videoconvert ! videoscale !"
