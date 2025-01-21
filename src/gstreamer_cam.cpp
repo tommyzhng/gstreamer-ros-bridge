@@ -14,7 +14,8 @@ GStreamerCam::GStreamerCam(ros::NodeHandle &nh) : nh_(nh), it_(nh)
     
     // init the gstreamer pipeline
     InitializeGStreamer(); 
-    SetCameraParams(); // set distortions and camera info (not fully implemented yet)
+    // set distortions and camera info
+    SetCameraParams(); 
 }
 
 GStreamerCam::~GStreamerCam()
@@ -26,14 +27,20 @@ GStreamerCam::~GStreamerCam()
 
 void GStreamerCam::SetCameraParams()
 {   
+    
     cameraInfo_.header.frame_id = "camera";
-    cameraInfo_.height = 480;
-    cameraInfo_.width = 640;
-    cameraInfo_.distortion_model = "plumb_bob";
-    cameraInfo_.D = {0.0, 0.0, 0.0, 0.0, 0.0};
-    cameraInfo_.K = {640.0, 0.0, 320.0, 0.0, 480.0, 240.0, 0.0, 0.0, 1.0};
-    cameraInfo_.R = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
-    cameraInfo_.P = {640.0, 0.0, 320.0, 0.0, 0.0, 480.0, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+    cameraInfo_.height = camera_height_;
+    cameraInfo_.width = camera_width_;
+    nh_.getParam("calibration/model", cameraInfo_.distortion_model);
+    nh_.getParam("calibration/D", cameraInfo_.D);
+
+    std::vector<double> K, R, P;
+    nh_.getParam("calibration/K", K);
+    nh_.getParam("calibration/R", R);
+    nh_.getParam("calibration/P", P);
+    std::copy(K.begin(), K.end(), cameraInfo_.K.begin());
+    std::copy(R.begin(), R.end(), cameraInfo_.R.begin());
+    std::copy(P.begin(), P.end(), cameraInfo_.P.begin());
 }
 
 void GStreamerCam::InitializeGStreamer()
@@ -52,7 +59,6 @@ void GStreamerCam::InitializeGStreamer()
     nh_.getParam("custom_pipeline", pipeline_str);  // load if there is a custom pipeline
     const gchar *pipeline_desc = pipeline_str.c_str();
 
-    
     pipeline_ = gst_parse_launch(pipeline_desc, NULL);
     ROS_INFO("GStreamer pipeline: %s", pipeline_desc);
 
@@ -129,10 +135,10 @@ void GStreamerCam::PubCameraImage()
     try {
         sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame_).toImageMsg();
         ros::Time current_time = ros::Time::now();
-        
+        // publish image
         msg->header.stamp = current_time;
         rosImagePub_.publish(msg);
-
+        // publish camera info
         cameraInfo_.header.stamp = current_time;
         rosCameraInfoPub_.publish(cameraInfo_);
     } catch (const std::exception &e) {

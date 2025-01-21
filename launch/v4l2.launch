@@ -1,0 +1,57 @@
+<launch>
+     <!-- Arguments -->
+    <arg name="camera_width" default="640" />
+    <arg name="camera_height" default="480" />
+    <arg name="camera_fps" default="30" />
+    <arg name="camera_format" default="GRAY8" />
+    <arg name="camera_location" default="/dev/video0" />
+    <arg name="camera_topic" default="/camera/image_rect" />
+    <arg name="custom_pipeline" default="
+        v4l2src device=$(arg camera_location) ! videoconvert ! videoscale ! video/x-raw,format=$(arg camera_format),width=$(arg camera_width),height=$(arg camera_height),framerate=$(arg camera_fps)/1 !
+        appsink name=sink sync=false drop=true max-buffers=1
+    "/>
+
+    <arg name="gst_width" default="640"/>
+    <arg name="gst_height" default="480"/>
+    <arg name="gst_fps" default="30"/>
+    <arg name="gst_topic" default="/camera/image_rect"/>
+    <arg name="gst_ip" default="100.64.0.1"/>
+    <arg name="gst_port" default="5602"/>
+    <arg name="bitrate" default="1200"/>
+    <arg name="mtu" default="500"/>
+
+    <!-- Camera Calibration -->
+    <rosparam param="calibration/model">plumb_bob</rosparam>
+    <rosparam param="calibration/D">[0.0, 0.0, 0.0, 0.0, 0.0]</rosparam>
+    <rosparam param="calibration/K">[640.0, 0.0, 320.0, 0.0, 480.0, 240.0, 0.0, 0.0, 1.0]</rosparam>
+    <rosparam param="calibration/R">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]</rosparam>
+    <rosparam param="calibration/P">[640.0, 0.0, 320.0, 0.0, 0.0, 480.0, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0]</rosparam>
+
+
+    <!-- Include Camera Node -->
+    <node pkg="gstreamer_ros_bridge" type="gstreamer_cam_node" name="gstreamer_cam_node" output="screen">
+        <param name="camera_location" value="$(arg camera_location)" />
+        <param name="camera_width" value="$(arg camera_width)" />
+        <param name="camera_height" value="$(arg camera_height)" />
+        <param name="camera_fps" value="$(arg camera_fps)" />
+        <param name="camera_format" value="$(arg camera_format)" />
+        <param name="camera_topic" value="$(arg camera_topic)" />
+        
+        <param name="custom_pipeline" value="$(arg custom_pipeline)"/>
+    </node>
+
+    <!-- Include GStreamer Bridge - Comment to only publish image to local ROS topics -->
+    <node pkg="gstreamer_ros_bridge" type="gstreamer_bridge_node" name="gstreamer_bridge_node" output="screen">
+        <!--params for gstreamer pipeline to peer (over udp)-->
+        <param name="bitrate" value="$(arg bitrate)"/>
+        <param name="mtu" value="$(arg mtu)"/>
+        <param name="gst_width" value="$(arg gst_width)"/>
+        <param name="gst_height" value="$(arg gst_height)"/>
+        <param name="gst_fps" value="$(arg gst_fps)"/>
+        <param name="gst_topic" value="$(arg gst_topic)"/>
+
+        <!--target ip and port-->
+        <param name="ip" value="$(arg gst_ip)"/>
+        <param name="port" value="$(arg gst_port)"/>
+    </node>
+</launch>
