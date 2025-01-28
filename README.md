@@ -1,36 +1,31 @@
 # GStreamer ROS Bridge
 This package opens a camera stream onto a local ROS topic, allowing for any local node to do processing with minimal latency (such as feeding into an Apriltag detector). It then opens a Gstreamer pipeline to stream any local ROS topic to a remote peer, bypassing the inneficient video networking of ROS and allowing for feedback when monitoring the peer. This GStreamer video can also then be republished as a ROS topic on the peer, allowing for viewing on RQT.
 
-## `gstreamer_cam_node`
+## Launch Files
 
+### `"camera".launch`
+**Arguments (Camera):** \
 This node initializes a camera stream (v4l2, nvarguscamera or libcamera) and publishes to a local ROS topic named /camera/image_rect.
 
-Params:
+- `camera_width`, `camera_height`, `camera_fps`: Specifies the input stream parameters to the locally published ROS topic.
+- `camera_format`: Specifies the format of the camera.
 - `camera_location`: Camera to start the stream to the local ROS topic. E.g. /dev/video0
-- `camera_width`, `camera_height`, `camera_fps`: Specifies the input stream parameters to the locally published ROS topic. This way higher resolution can be published to local processing nodes like April tags or CV.
-- `camera_format`, Specifies the format of the camera. Defualt BGR
-- `camera_topic`: Specifies what topic the camera node publishes to. Default /camera/image_rect
-- `custom_pipline`: Fill in if a custom local camera pipeline is required. This should be filled in for nvarguscamera or libcamera drivers. There are examples in the launch file.
+- `camera_topic`: Specifies what topic the camera node publishes to. 
+- `custom_pipline`: Fill in the pipeline that works with your camera. Test this with CLI and see if it works with a UDP or file sink. Then convert the output to an appsink as seen in the examples.
 
-Note if filling in a custom pipeline, make sure that `camera_location`, `camera_width`, `camera_height`, and `camera_fps` are the same as the pipeline params.
-
-## `gstreamer_bridge_node`
-
-It also takes a ROS node specified by the `gst_topic` param and writes it to a custom GStreamer pipeline to the peer.
-
-Params:
-- `bitrate`, `mtu`: Specifies the bitrate and MTU of the GStreamer pipeline to the peer. Slower networks usually require lower bitrates so the network can keep up.
+**Arguments (Bridge):** \
+This node takes a ROS topic specified by the `gst_topic` param and writes it to a custom GStreamer pipeline to the peer IP.
 - `gst_width`, `gst_height`, `gst_fps`: The GStreamer pipeline resolution and framerate. This allows decreased bandwidth after processing the image locally by sending a downscaled image to the peer for feedback purposes.
 - `gst_topic`: The topic that the pipeline should take images from. Default /camera/image_rect
 - `ip`, `port`: The Peer IP and port of the local stream.
+- `bitrate`, `mtu`: Specifies the bitrate and MTU of the GStreamer pipeline to the peer. Slower networks usually require lower bitrates so the network can keep up.
 
-
-## `gstreamer_publisher_node`
+### `gstreamer_publisher.launch`
 
 This node receives data from a GStreamer pipeline and publishes it to a ROS topic as a `sensor_msgs/Image` message.
 By default it expects H.264 encoded video sent over UDP. This is usually run on the 'peer' computer to connect to the bridge node.
 
-* Important note: this should be run before the `gstreamer_bridge_node` to make sure the camera pops up every time in rqt.
+* Note: this should be run before the `gstreamer_bridge_node` for faster response (not crucial, but recommended).
 
 Params:
 - `topic_name`: Name of the topic to publish the images to. Default `/gstreamer_received`.

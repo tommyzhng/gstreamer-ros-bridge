@@ -1,8 +1,7 @@
 #include "gstreamer_cam.hpp"
 
-GStreamerCam::GStreamerCam(ros::NodeHandle &nh)
+GStreamerCam::GStreamerCam(ros::NodeHandle &nh) : nh_(nh), it_(nh)
 {
-    nh_ = nh;
     nh_.getParam("camera_location", camera_location_);
     nh_.getParam("camera_format", camera_format_);
     nh_.getParam("camera_width", camera_width_);
@@ -10,12 +9,13 @@ GStreamerCam::GStreamerCam(ros::NodeHandle &nh)
     nh_.getParam("camera_fps", camera_fps_);
     nh_.getParam("camera_topic", camera_topic_);
 
-    rosImagePub_ = nh_.advertise<sensor_msgs::Image>("/camera/image_rect", 1);
+    rosImagePub_ = it_.advertise(camera_topic_, 1);
     rosCameraInfoPub_ = nh_.advertise<sensor_msgs::CameraInfo>("/camera/camera_info", 1);
     
     // init the gstreamer pipeline
     InitializeGStreamer(); 
-    SetCameraParams(); // set distortions and camera info (not fully implemented yet)
+    // set distortions and camera info
+    SetCameraParams(); 
 }
 
 GStreamerCam::~GStreamerCam()
@@ -28,13 +28,19 @@ GStreamerCam::~GStreamerCam()
 void GStreamerCam::SetCameraParams()
 {   
     cameraInfo_.header.frame_id = "camera";
-    cameraInfo_.height = 480;
-    cameraInfo_.width = 640;
-    cameraInfo_.distortion_model = "plumb_bob";
-    cameraInfo_.D = {0.0, 0.0, 0.0, 0.0, 0.0};
-    cameraInfo_.K = {640.0, 0.0, 320.0, 0.0, 480.0, 240.0, 0.0, 0.0, 1.0};
-    cameraInfo_.R = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
-    cameraInfo_.P = {640.0, 0.0, 320.0, 0.0, 0.0, 480.0, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+    cameraInfo_.height = camera_height_;
+    cameraInfo_.width = camera_width_;
+
+    nh_.getParam("calibration/model", cameraInfo_.distortion_model);
+    nh_.getParam("calibration/D", cameraInfo_.D);
+
+    std::vector<double> K, R, P;
+    nh_.getParam("calibration/K", K);
+    nh_.getParam("calibration/R", R);
+    nh_.getParam("calibration/P", P);
+    std::copy(K.begin(), K.end(), cameraInfo_.K.begin());
+    std::copy(R.begin(), R.end(), cameraInfo_.R.begin());
+    std::copy(P.begin(), P.end(), cameraInfo_.P.begin());
 }
 
 void GStreamerCam::InitializeGStreamer()
@@ -53,7 +59,6 @@ void GStreamerCam::InitializeGStreamer()
     nh_.getParam("custom_pipeline", pipeline_str);  // load if there is a custom pipeline
     const gchar *pipeline_desc = pipeline_str.c_str();
 
-    
     pipeline_ = gst_parse_launch(pipeline_desc, NULL);
     ROS_INFO("GStreamer pipeline: %s", pipeline_desc);
 
@@ -70,73 +75,78 @@ void GStreamerCam::InitializeGStreamer()
         return;
     }
 
+    g_object_set(appsink_, "emit-signals", FALSE, "sync", FALSE, "drop", TRUE, "max-buffers", 1, NULL);    
     gst_element_set_state(pipeline_, GST_STATE_PLAYING);
 }
 
 void GStreamerCam::PubCameraImage()
 {
     GstSample *sample = gst_app_sink_try_pull_sample(GST_APP_SINK(appsink_), GST_SECOND);
-    if (sample) {
-        //get the buffer from the sample
-        GstBuffer *buffer = gst_sample_get_buffer(sample);
-        if (!buffer) {
-            ROS_WARN("Failed to get GstBuffer from sample");
-            gst_sample_unref(sample);
-            return;
-        }
-        // map the buffer to access the data
-        GstMapInfo map_info;
-        if (!gst_buffer_map(buffer, &map_info, GST_MAP_READ)) {
-            ROS_WARN("Failed to map GstBuffer");
-            gst_sample_unref(sample);
-            return;
-        }
-        // check format
-        if (!format_) {
-            GstCaps *caps = gst_sample_get_caps(sample);
-            if (!caps) {
-                ROS_WARN("Failed to get GstCaps from sample");
-                gst_sample_unref(sample);
-                return;
-            }
-            // get the format from the caps
-            GstStructure *s = gst_caps_get_structure(caps, 0);
-            format_ = gst_structure_get_string(s, "format");
-            ROS_INFO("Camera format: %s", format_);
-            if (!format_) {
-                ROS_WARN("Failed to get format from caps");
-                gst_sample_unref(sample);
-                return;
-            }
-        }
+    if (!sample) {
+        ROS_WARN("Failed to get GstSample from appsink");
+        return;
+    }
 
-        // check if empty
-        if (!map_info.data) {
-            ROS_WARN("Buffer data is null");
-            gst_buffer_unmap(buffer, &map_info);
-            gst_sample_unref(sample);
-            return;
-        }
-        // convert to readable format by cv_bridge
-        ConvertImage(map_info);
-        try {
-            sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame_).toImageMsg();
-            ros::Time current_time = ros::Time::now();
-            
-            msg->header.stamp = current_time;
-            rosImagePub_.publish(msg);
+    /* after obtaining sample */
 
-            cameraInfo_.header.stamp = current_time;
-            rosCameraInfoPub_.publish(cameraInfo_);
-        } catch (const std::exception &e) {
-            ROS_ERROR("Failed to convert frame to ROS Image message: %s", e.what());
-        }
-        // Unmap and release the buffer
+    GstBuffer *buffer = gst_sample_get_buffer(sample);
+    if (!buffer) {
+        ROS_WARN("Failed to get GstBuffer from sample");
+        gst_sample_unref(sample);
+        return;
+    }
+    // map the buffer to access the data
+    GstMapInfo map_info;
+    if (!gst_buffer_map(buffer, &map_info, GST_MAP_READ)) {
+        ROS_WARN("Failed to map GstBuffer");
+        gst_sample_unref(sample);
+        return;
+    }
+
+    // check if data is empty
+    if (!map_info.data) {
+        ROS_WARN("Buffer data is null");
         gst_buffer_unmap(buffer, &map_info);
         gst_sample_unref(sample);
-    } else {
-        ROS_WARN("Failed to get frame from appsink");
+        return;
     }
+
+    // check format once to avoid multiple calls
+    if (!format_) {
+        GstCaps *caps = gst_sample_get_caps(sample);
+        if (!caps) {
+            ROS_WARN("Failed to get GstCaps from sample");
+            gst_sample_unref(sample);
+            return;
+        }
+        // get the format from the caps
+        GstStructure *s = gst_caps_get_structure(caps, 0);
+        format_ = gst_structure_get_string(s, "format");
+        ROS_INFO("Camera format: %s", format_);
+        if (!format_) {
+            ROS_WARN("Failed to get format from caps");
+            gst_sample_unref(sample);
+            return;
+        }
+    }
+
+    // convert to readable format by cv_bridge
+    ConvertImage(map_info);
+    try {
+        sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame_).toImageMsg();
+        ros::Time current_time = ros::Time::now();
+        // publish image
+        msg->header.stamp = current_time;
+        rosImagePub_.publish(msg);
+        // publish camera info
+        cameraInfo_.header.stamp = current_time;
+        rosCameraInfoPub_.publish(cameraInfo_);
+    } catch (const std::exception &e) {
+        ROS_ERROR("Failed to convert frame to ROS Image message: %s", e.what());
+    }
+    // Unmap and release the buffer
+    gst_buffer_unmap(buffer, &map_info);
+    gst_sample_unref(sample);
 }
 
 void GStreamerCam::ConvertImage(GstMapInfo &map_info)
@@ -164,7 +174,7 @@ void GStreamerCam::ConvertImage(GstMapInfo &map_info)
     }
 }
 
-void GStreamerCam::Update()
+void GStreamerCam::Update()  // expose private method to main
 {
     PubCameraImage();
 }
