@@ -23,14 +23,7 @@
     <arg name="bitrate" default="1200"/>
     <arg name="mtu" default="500"/>
 
-    <!-- Camera Calibration -->
-    <rosparam param="calibration/model">plumb_bob</rosparam>
-    <rosparam param="calibration/D">[0.0, 0.0, 0.0, 0.0, 0.0]</rosparam>
-    <rosparam param="calibration/K">[640.0, 0.0, 320.0, 0.0, 480.0, 240.0, 0.0, 0.0, 1.0]</rosparam>
-    <rosparam param="calibration/R">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]</rosparam>
-    <rosparam param="calibration/P">[640.0, 0.0, 320.0, 0.0, 0.0, 480.0, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0]</rosparam>
-
-
+   
     <!-- Include Camera Node -->
     <node pkg="gstreamer_ros_bridge" type="gstreamer_cam_node" name="gstreamer_cam_node" output="screen">
         <param name="camera_location" value="$(arg camera_location)" />
@@ -39,8 +32,13 @@
         <param name="camera_fps" value="$(arg camera_fps)" />
         <param name="camera_format" value="$(arg camera_format)" />
         <param name="camera_topic" value="$(arg camera_topic)" />
-        
         <param name="custom_pipeline" value="$(arg custom_pipeline)"/>
+         <!-- Camera Calibration -->
+        <rosparam param="calibration/model">plumb_bob</rosparam>
+        <rosparam param="calibration/D">[0.0, 0.0, 0.0, 0.0, 0.0]</rosparam>
+        <rosparam param="calibration/K">[640.0, 0.0, 320.0, 0.0, 480.0, 240.0, 0.0, 0.0, 1.0]</rosparam>
+        <rosparam param="calibration/R">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]</rosparam>
+        <rosparam param="calibration/P">[640.0, 0.0, 320.0, 0.0, 0.0, 480.0, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0]</rosparam>
     </node>
 
     <!-- Include GStreamer Bridge - Comment to only publish image to local ROS topics -->

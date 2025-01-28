@@ -27,10 +27,10 @@ GStreamerCam::~GStreamerCam()
 
 void GStreamerCam::SetCameraParams()
 {   
-    
     cameraInfo_.header.frame_id = "camera";
     cameraInfo_.height = camera_height_;
     cameraInfo_.width = camera_width_;
+
     nh_.getParam("calibration/model", cameraInfo_.distortion_model);
     nh_.getParam("calibration/D", cameraInfo_.D);
 
