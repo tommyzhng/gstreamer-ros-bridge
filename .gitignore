@@ -52,3 +52,6 @@ CATKIN_IGNORE
 
 # vscode files
 .vscode/
+
+# Vim swap files
+*.swp
