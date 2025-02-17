@@ -29,14 +29,6 @@
     <arg name="gst_ip" default="100.64.0.9"/>
     <arg name="gst_port" default="5602"/>
 
-    <!-- Camera Calibration -->
-    <rosparam param="calibration/model">plumb_bob</rosparam>
-    <rosparam param="calibration/D">[0.0, 0.0, 0.0, 0.0, 0.0]</rosparam>
-    <rosparam param="calibration/K">[640.0, 0.0, 320.0, 0.0, 480.0, 240.0, 0.0, 0.0, 1.0]</rosparam>
-    <rosparam param="calibration/R">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]</rosparam>
-    <rosparam param="calibration/P">[640.0, 0.0, 320.0, 0.0, 0.0, 480.0, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0]</rosparam>
-
-
     <!-- Include Camera Node -->
     <node pkg="gstreamer_ros_bridge" type="gstreamer_cam_node" name="gstreamer_cam_node" output="screen">
         <param name="camera_location" value="$(arg camera_location)" />
@@ -47,6 +39,15 @@
         <param name="camera_topic" value="$(arg camera_topic)" />
         
         <param name="custom_pipeline" value="$(arg custom_pipeline)"/>
+
+        <!-- Camera Calibration -->
+        <!-- This is for a Raspberry Pi Camera Module v3 Wide -->
+        <!-- at full FOV, rescaled to 960x540 -->
+        <rosparam param="calibration/model">plumb_bob</rosparam>
+        <rosparam param="calibration/D">[0.022749, -0.033388, 0.002093, -0.003933, 0.000000]</rosparam>
+        <rosparam param="calibration/K">[392.25521, 0, 478.16699, 0, 392.37138, 270.65613, 0, 0, 1]</rosparam>
+        <rosparam param="calibration/R">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]</rosparam>
+        <rosparam param="calibration/P">[369.04639, 0, 465.42026, 0, 0, 393.43741, 271.40742, 0, 0, 0, 1, 0]</rosparam>
     </node>
 
     <!-- Include GStreamer Bridge - Comment to only publish image to local ROS topics -->
