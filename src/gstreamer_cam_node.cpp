@@ -4,10 +4,10 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "gstreamer_cam_node");
     ros::NodeHandle nh("~");
-    ros::Rate rate(30);
 
     gst_init(&argc, &argv);
     GStreamerCam cam(nh);
+    ros::Rate rate(cam.GetFrameRate());
 
     while (ros::ok())
     {

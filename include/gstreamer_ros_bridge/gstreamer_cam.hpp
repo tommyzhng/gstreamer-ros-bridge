@@ -21,6 +21,7 @@ public:
     GStreamerCam(ros::NodeHandle &nh);
     ~GStreamerCam();
     void Update();
+    int GetFrameRate() const;
 
     GstElement *pipeline_;
     GstElement *appsink_;

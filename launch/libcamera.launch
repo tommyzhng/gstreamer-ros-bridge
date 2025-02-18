@@ -1,0 +1,65 @@
+<launch>
+    <!-- Arguments for the camera node -->
+    <!-- Raw width and height define the hardware mode that the camera sensor is running at -->
+    <!-- For the camera module v3 (wide), 2304x1296 gives full FOV and 56 FPS max -->
+    <arg name="camera_raw_width" default="2304" />
+    <arg name="camera_raw_height" default="1296" />
+    <!-- Actual pipeline resolution, framerate, etc -->
+    <arg name="camera_width" default="960"/>
+    <arg name="camera_height" default="540" />
+    <arg name="camera_fps" default="50" />
+    <arg name="camera_format" default="NV12" />
+    <arg name="camera_topic" default="/camera/image_rect" />
+    <arg name="custom_pipeline" default=
+        "libcamerasrc ! videoconvert ! video/x-raw,format=$(arg camera_format),width=$(arg camera_raw_width),height=$(arg camera_raw_height),framerate=$(arg camera_fps)/1 ! 
+        videoscale ! video/x-raw,width=$(arg camera_width),height=$(arg camera_height),framerate=$(arg camera_fps)/1 !
+        appsink name=sink sync=false
+    "/>
+    <!-- Unused (since libcamera doesn't read from the /dev/video* devices) -->
+    <arg name="camera_location" default="/dev/video0" />
+
+    <!-- Arguments for the gstreamer video stream (bridge node) -->
+    <arg name="bitrate" default="1200"/>
+    <arg name="mtu" default="500"/>
+    <arg name="gst_width" default="320"/>
+    <arg name="gst_height" default="180"/>
+    <arg name="gst_fps" default="15"/>
+    <arg name="gst_topic" default="/camera/image_rect"/>
+
+    <arg name="gst_ip" default="100.64.0.9"/>
+    <arg name="gst_port" default="5602"/>
+
+    <!-- Include Camera Node -->
+    <node pkg="gstreamer_ros_bridge" type="gstreamer_cam_node" name="gstreamer_cam_node" output="screen">
+        <param name="camera_location" value="$(arg camera_location)" />
+        <param name="camera_width" value="$(arg camera_width)" />
+        <param name="camera_height" value="$(arg camera_height)" />
+        <param name="camera_fps" value="$(arg camera_fps)" />
+        <param name="camera_format" value="$(arg camera_format)" />
+        <param name="camera_topic" value="$(arg camera_topic)" />
+        
+        <param name="custom_pipeline" value="$(arg custom_pipeline)"/>
+
+        <!-- Camera Calibration -->
+        <!-- This is for a Raspberry Pi Camera Module v3 Wide -->
+        <!-- at full FOV, rescaled to 960x540 -->
+        <rosparam param="calibration/model">plumb_bob</rosparam>
+        <rosparam param="calibration/D">[0.022749, -0.033388, 0.002093, -0.003933, 0.000000]</rosparam>
+        <rosparam param="calibration/K">[392.25521, 0, 478.16699, 0, 392.37138, 270.65613, 0, 0, 1]</rosparam>
+        <rosparam param="calibration/R">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]</rosparam>
+        <rosparam param="calibration/P">[369.04639, 0, 465.42026, 0, 0, 393.43741, 271.40742, 0, 0, 0, 1, 0]</rosparam>
+    </node>
+
+    <!-- Include GStreamer Bridge - Comment to only publish image to local ROS topics -->
+    <node pkg="gstreamer_ros_bridge" type="gstreamer_bridge_node" name="gstreamer_bridge_node" output="screen">
+        <param name="bitrate" value="$(arg bitrate)"/>
+        <param name="mtu" value="$(arg mtu)"/>
+        <param name="gst_width" value="$(arg gst_width)"/>
+        <param name="gst_height" value="$(arg gst_height)"/>
+        <param name="gst_fps" value="$(arg gst_fps)"/>
+        <param name="gst_topic" value="$(arg gst_topic)"/>
+
+        <param name="ip" value="$(arg gst_ip)"/>
+        <param name="port" value="$(arg gst_port)"/>
+    </node>
+</launch>

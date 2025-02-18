@@ -178,3 +178,9 @@ void GStreamerCam::Update()  // expose private method to main
 {
     PubCameraImage();
 }
+
+// Used by main to determine the rate Update() should be called at
+int GStreamerCam::GetFrameRate() const
+{
+    return camera_fps_;
+}
