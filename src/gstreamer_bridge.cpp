@@ -68,7 +68,7 @@ void GStreamerRosBridge::onInit()
     std::string gs_port = "5602";
     nh_.getParam("port", gs_port);
 
-    int gst_fps, bitrate, mtu;
+    int gst_fps = 30, bitrate = 1200, mtu = 500;
     nh_.getParam("gst_width", gst_width_);
     nh_.getParam("gst_height", gst_height_);
     nh_.getParam("gst_fps", gst_fps);
