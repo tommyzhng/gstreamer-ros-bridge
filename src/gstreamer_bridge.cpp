@@ -74,7 +74,6 @@ void GStreamerRosBridge::onInit()
     nh_.getParam("gst_fps", gst_fps);
     nh_.getParam("bitrate", bitrate);
     nh_.getParam("mtu", mtu);
-    ros_rate_ = ros::Rate(gst_fps);  // update ros rate
 
     setenv("GST_DEBUG", "3", 1);
     

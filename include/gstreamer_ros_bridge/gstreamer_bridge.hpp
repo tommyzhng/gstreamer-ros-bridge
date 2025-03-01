@@ -25,8 +25,6 @@ public:
     ~GStreamerRosBridge();
 
     ros::NodeHandle nh_;
-    // ros_rate for fps workaround
-    ros::Rate ros_rate_{30};
 
 private:
     virtual void onInit() override;
