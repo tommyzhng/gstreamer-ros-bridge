@@ -1,17 +1,19 @@
-#include "gstreamer_bridge.hpp"
+#include <ros/ros.h>
+#include <nodelet/loader.h>
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "gstreamer_bridge_node");
-    ros::NodeHandle nh("~");
 
-    GStreamerRosBridge bridge(nh);
+    nodelet::Loader nodelet;
+    nodelet::M_string remap(ros::names::getRemappings());
+    nodelet::V_string nargv;
 
-    while (ros::ok())
-    {
-        ros::spinOnce();
-        bridge.ros_rate_.sleep();
-    }
+    nodelet.load(ros::this_node::getName(),
+                "gstreamer_ros_bridge/GStreamerRosBridge",
+                remap, nargv);
+
+    ros::spin();
     return 0;
 }
 

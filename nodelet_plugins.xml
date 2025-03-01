@@ -1,0 +1,8 @@
+<library path="lib/libgstreamer_ros_bridge">
+  <!-- bridge -->
+  <class name="gstreamer_ros_bridge/GStreamerRosBridge" type="gstreamer_ros_bridge::GStreamerRosBridge" base_class_type="nodelet::Nodelet">
+    <description>
+      A Nodelet for forwarding ros images to a Gstreamer remote client
+    </description>
+  </class>
+</library>
