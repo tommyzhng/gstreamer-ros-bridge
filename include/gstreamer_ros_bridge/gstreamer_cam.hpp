@@ -10,23 +10,28 @@
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
 #include <image_transport/image_transport.h>
+#include <nodelet/nodelet.h>
+
+namespace gstreamer_ros_bridge
+{
 
 /* 
     this node starts a gstreamer video feed from the camera and pushes it onto a camera topic
 */
 
-class GStreamerCam
+class GStreamerCam : public nodelet::Nodelet
 {
 public:
-    GStreamerCam(ros::NodeHandle &nh);
+    GStreamerCam();
     ~GStreamerCam();
-    void Update();
-    int GetFrameRate() const;
 
     GstElement *pipeline_;
     GstElement *appsink_;
 
 private:
+    virtual void onInit() override;
+    void Update(const ros::TimerEvent&);
+
     /**
     * @brief set cam params for camera/camera_info 
     */
@@ -47,6 +52,7 @@ private:
     image_transport::Publisher rosImagePub_;
 
     ros::NodeHandle nh_;
+    ros::Timer update_timer_;
     image_transport::ImageTransport it_;
 
     cv::Mat frame_; // published frame
@@ -56,5 +62,7 @@ private:
     std::string camera_location_, camera_format_, camera_topic_;
     int camera_width_, camera_height_, camera_fps_;
 };
+
+}
 
 #endif 
