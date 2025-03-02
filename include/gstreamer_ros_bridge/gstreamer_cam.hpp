@@ -11,6 +11,7 @@
 #include <gst/app/gstappsink.h>
 #include <image_transport/image_transport.h>
 #include <nodelet/nodelet.h>
+#include <nodelet/loader.h>
 
 namespace gstreamer_ros_bridge
 {

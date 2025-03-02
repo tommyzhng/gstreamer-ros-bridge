@@ -1,5 +1,4 @@
-#include <ros/ros.h>
-#include <nodelet/loader.h>
+#include <gstreamer_bridge.hpp>
 
 int main(int argc, char **argv)
 {

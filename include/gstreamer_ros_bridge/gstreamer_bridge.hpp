@@ -9,6 +9,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <nodelet/nodelet.h>
+#include <nodelet/loader.h>
 #include <cstdlib>
 
 namespace gstreamer_ros_bridge
