@@ -1,12 +1,19 @@
 #include "gstreamer_bridge.hpp"
 
-cv::Mat resizeAndPad(cv::Mat &image, int target_width, int target_height) {
+#include <pluginlib/class_list_macros.h>
+
+PLUGINLIB_EXPORT_CLASS(gstreamer_ros_bridge::GStreamerRosBridge, nodelet::Nodelet)
+
+namespace gstreamer_ros_bridge
+{
+
+cv::Mat GStreamerRosBridge::resizeAndPad(cv::Mat &image, int target_width, int target_height) {
     if (image.empty()) {
-        ROS_ERROR("Input image is empty");
+        NODELET_ERROR("Input image is empty");
         return cv::Mat();
     }
     if (image.cols == 0 || image.rows == 0) {
-        ROS_ERROR("Image has empty rows or columns");
+        NODELET_ERROR("Image has empty rows or columns");
         return cv::Mat();
     }
 
@@ -46,20 +53,27 @@ cv::Mat resizeAndPad(cv::Mat &image, int target_width, int target_height) {
     image.release();
     return padded_image;
 }
-GStreamerRosBridge::GStreamerRosBridge(ros::NodeHandle &nh)
-{
-    std::string gs_ip = "100.64.0.1";
-    nh.getParam("ip", gs_ip);
-    std::string gs_port = "5602";
-    nh.getParam("port", gs_port);
 
-    int gst_fps, bitrate, mtu;
-    nh.getParam("gst_width", gst_width_);
-    nh.getParam("gst_height", gst_height_);
-    nh.getParam("gst_fps", gst_fps);
-    nh.getParam("bitrate", bitrate);
-    nh.getParam("mtu", mtu);
-    ros_rate_ = ros::Rate(gst_fps);  // update ros rate
+GStreamerRosBridge::~GStreamerRosBridge()
+{
+    pipeline_.release();
+}
+
+void GStreamerRosBridge::onInit()
+{
+    nh_ = getPrivateNodeHandle();
+
+    std::string gs_ip = "100.64.0.1";
+    nh_.getParam("ip", gs_ip);
+    std::string gs_port = "5602";
+    nh_.getParam("port", gs_port);
+
+    int gst_fps = 30, bitrate = 1200, mtu = 500;
+    nh_.getParam("gst_width", gst_width_);
+    nh_.getParam("gst_height", gst_height_);
+    nh_.getParam("gst_fps", gst_fps);
+    nh_.getParam("bitrate", bitrate);
+    nh_.getParam("mtu", mtu);
 
     setenv("GST_DEBUG", "3", 1);
     
@@ -77,33 +91,28 @@ GStreamerRosBridge::GStreamerRosBridge(ros::NodeHandle &nh)
         << " sync=false";
     
     std::string gst_topic = "/camera/image_rect";
-    nh.getParam("gst_topic", gst_topic);
+    nh_.getParam("gst_topic", gst_topic);
 
     // start the udp pipeline
     std::string gstreamer_pipeline = udpPipeline.str();
     pipeline_.open(gstreamer_pipeline, cv::CAP_GSTREAMER, 0, gst_fps, cv::Size(gst_width_, gst_height_), true);
     if (!pipeline_.isOpened())
     {
-        ROS_ERROR("Failed to open gstreamer pipeline");
+        NODELET_ERROR("Failed to open gstreamer pipeline");
         return;
     }
 
-    gsImageSub_ = nh.subscribe(gst_topic, 1, &GStreamerRosBridge::GsImageCallback, this, ros::TransportHints().tcpNoDelay());
-}
-
-GStreamerRosBridge::~GStreamerRosBridge()
-{
-    pipeline_.release();
+    gsImageSub_ = nh_.subscribe(gst_topic, 1, &GStreamerRosBridge::GsImageCallback, this, ros::TransportHints().tcpNoDelay());
 }
 
 void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
 {
     if (!pipeline_.isOpened()) {
-        ROS_ERROR("GStreamer pipeline is not opened, unable to write image");
+        NODELET_ERROR("GStreamer pipeline is not opened, unable to write image");
         return;
     }
     if (!msg) {
-        ROS_ERROR("Received an empty image message.");
+        NODELET_ERROR("Received an empty image message.");
         return;
     }   
     // write to gstreamer pipeline
@@ -111,7 +120,7 @@ void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
         cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
         frame_ = cv_ptr->image;
     } catch (cv_bridge::Exception &e) {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
+        NODELET_ERROR("cv_bridge exception: %s", e.what());
     }
     // check if image needs to be resized
     if (frame_.cols != gst_width_ || frame_.rows != gst_height_){
@@ -121,3 +130,4 @@ void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
     frame_.release();
 }
 
+}

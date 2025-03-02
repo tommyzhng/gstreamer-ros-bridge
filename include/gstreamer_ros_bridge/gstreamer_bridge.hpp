@@ -8,20 +8,30 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <nodelet/nodelet.h>
+#include <nodelet/loader.h>
 #include <cstdlib>
+
+namespace gstreamer_ros_bridge
+{
 
 /* 
     this node takes a image rostopic and pushes it through a gstreamer pipeline
 */
 
-class GStreamerRosBridge
+class GStreamerRosBridge : public nodelet::Nodelet
 {
 public:
-    GStreamerRosBridge(ros::NodeHandle &nh);
+    GStreamerRosBridge() = default;
     ~GStreamerRosBridge();
-    // ros_rate for fps workaround
-    ros::Rate ros_rate_{30};
+
+    ros::NodeHandle nh_;
+
 private:
+    virtual void onInit() override;
+
+    cv::Mat resizeAndPad(cv::Mat &image, int target_width, int target_height);
+
     /**
     * @brief function to recieve from ros image topic and publish to pipeline to peer 
     * @param msg - image message from ros
@@ -37,8 +47,8 @@ private:
 
     // gstreamer param member vars
     int gst_width_{640}, gst_height_{480};
-
-
 };
+
+}
 
 #endif //GSTREAMER_ROS_BRIDGE_GSTREAMER_BRIDGE_HPP

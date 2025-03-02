@@ -24,9 +24,11 @@
     <arg name="bitrate" default="1200"/>
     <arg name="mtu" default="500"/>
 
+    <!-- Nodelet Manager -->
+    <node pkg="nodelet" type="nodelet" name="camera_manager" args="manager" output="screen" />
    
     <!-- Include Camera Node -->
-    <node pkg="gstreamer_ros_bridge" type="gstreamer_cam_node" name="gstreamer_cam_node" output="screen">
+    <node pkg="nodelet" type="nodelet" name="gstreamer_cam_node" args="load gstreamer_ros_bridge/GStreamerCam camera_manager" output="screen" >
         <param name="camera_location" value="$(arg camera_location)" />
         <param name="camera_width" value="$(arg camera_width)" />
         <param name="camera_height" value="$(arg camera_height)" />
@@ -43,7 +45,7 @@
     </node>
 
     <!-- Include GStreamer Bridge - Comment to only publish image to local ROS topics -->
-    <node pkg="gstreamer_ros_bridge" type="gstreamer_bridge_node" name="gstreamer_bridge_node" output="screen">
+    <node pkg="nodelet" type="nodelet" name="gstreamer_bridge_node" args="load gstreamer_ros_bridge/GStreamerRosBridge camera_manager" output="screen">
         <!--params for gstreamer pipeline to peer (over udp)-->
         <param name="bitrate" value="$(arg bitrate)"/>
         <param name="mtu" value="$(arg mtu)"/>

@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   cv_bridge
   image_transport
+  nodelet
+  pluginlib
 )
 
 #find_package(Eigen3 REQUIRED)
@@ -23,7 +25,7 @@ pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0>=1.14)
 pkg_check_modules(GSTREAMER_BASE REQUIRED gstreamer-base-1.0>=1.14)
 
 catkin_package(
-  CATKIN_DEPENDS roscpp std_msgs image_transport sensor_msgs cv_bridge
+  CATKIN_DEPENDS roscpp std_msgs image_transport sensor_msgs cv_bridge nodelet pluginlib
 )
 
 include_directories(
