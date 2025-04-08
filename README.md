@@ -19,6 +19,7 @@ This node takes a ROS topic specified by the `gst_topic` param and writes it to 
 - `gst_topic`: The topic that the pipeline should take images from. Default /camera/image_rect
 - `ip`, `port`: The Peer IP and port of the local stream.
 - `bitrate`, `mtu`: Specifies the bitrate and MTU of the GStreamer pipeline to the peer. Slower networks usually require lower bitrates so the network can keep up.
+- `stream_on`: Whether the stream is turned on initially. The stream can be turned on or off after initialization by calling the service `~set_stream_on` of type `std_msgs/SetBool`.
 
 ### `gstreamer_publisher.launch`
 
