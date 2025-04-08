@@ -8,9 +8,11 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <std_srvs/SetBool.h>
 #include <nodelet/nodelet.h>
 #include <nodelet/loader.h>
 #include <cstdlib>
+#include <functional>
 
 namespace gstreamer_ros_bridge
 {
@@ -32,6 +34,8 @@ private:
 
     cv::Mat resizeAndPad(cv::Mat &image, int target_width, int target_height);
 
+    bool SetStreamOnCallback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp);
+
     /**
     * @brief function to recieve from ros image topic and publish to pipeline to peer 
     * @param msg - image message from ros
@@ -40,6 +44,7 @@ private:
     void GsImageCallback(const sensor_msgs::ImageConstPtr &msg);
     
     ros::Subscriber gsImageSub_;
+    ros::ServiceServer set_stream_on_srv_;
 
     // gstreamer pipeline
     cv::VideoWriter pipeline_;
@@ -47,6 +52,8 @@ private:
 
     // gstreamer param member vars
     int gst_width_{640}, gst_height_{480};
+
+    bool stream_on_ = true;
 };
 
 }

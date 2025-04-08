@@ -63,6 +63,8 @@ void GStreamerRosBridge::onInit()
 {
     nh_ = getPrivateNodeHandle();
 
+    nh_.getParam("stream_on", stream_on_);
+
     std::string gs_ip = "100.64.0.1";
     nh_.getParam("ip", gs_ip);
     std::string gs_port = "5602";
@@ -103,6 +105,22 @@ void GStreamerRosBridge::onInit()
     }
 
     gsImageSub_ = nh_.subscribe(gst_topic, 1, &GStreamerRosBridge::GsImageCallback, this, ros::TransportHints().tcpNoDelay());
+
+    set_stream_on_srv_ = nh_.advertiseService("set_stream_on", &GStreamerRosBridge::SetStreamOnCallback, this);
+}
+
+bool GStreamerRosBridge::SetStreamOnCallback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp)
+{
+    if (req.data && !pipeline_.isOpened()) {
+        resp.success = false;
+        resp.message = "pipeline not opened";
+    }
+    else {
+        stream_on_ = req.data;
+        resp.success = true;
+    }
+    NODELET_INFO("Turned stream %s", stream_on_ ? "on" : "off");
+    return true;
 }
 
 void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
@@ -114,7 +132,11 @@ void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
     if (!msg) {
         NODELET_ERROR("Received an empty image message.");
         return;
-    }   
+    }
+    // If stream is turned off, don't write to the pipeline
+    if (!stream_on_) {
+        return;
+    }
     // write to gstreamer pipeline
     try {
         cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
