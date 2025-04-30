@@ -4,7 +4,7 @@
     <arg name="camera_height" default="480" />
     <arg name="camera_fps" default="30" />
     <arg name="camera_format" default="BGR" />
-    <arg name="camera_location" default="/dev/video2" />
+    <arg name="camera_location" default="/dev/video0" />
     <arg name="camera_topic" default="/camera/image_rect" />
     <arg name="custom_pipeline" default="
         v4l2src device=$(arg camera_location) ! videoconvert ! videoscale ! video/x-raw,format=$(arg camera_format),width=$(arg camera_width),height=$(arg camera_height),framerate=$(arg camera_fps)/1 !
@@ -16,10 +16,10 @@
     <arg name="gst_fps" default="30"/>
     <arg name="gst_topic" default="/camera/image_rect"/>
     
-    <arg name="gst_ip" default="100.64.0.1"/>
+    <arg name="gst_ip" default="127.0.0.1"/>
     <arg name="gst_port" default="5602"/>
-    <arg name="bitrate" default="1200"/>
-    <arg name="mtu" default="500"/>
+    <arg name="bitrate" default="1000"/>
+    <arg name="mtu" default="800"/>
 
 
 
