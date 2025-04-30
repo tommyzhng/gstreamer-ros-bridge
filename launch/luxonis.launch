@@ -4,7 +4,7 @@
     <arg name="camera_height" default="720" />
     <arg name="camera_fps" default="60" />
     <arg name="camera_format" default="BGR" />
-    <arg name="camera_location" default="/dev/video0" />
+    <arg name="camera_location" default="/dev/video2" />
     <arg name="camera_topic" default="/camera/image_rect" />
     <arg name="custom_pipeline" default="
         v4l2src device=$(arg camera_location) ! videoconvert ! videoscale ! video/x-raw,format=$(arg camera_format),width=$(arg camera_width),height=$(arg camera_height),framerate=$(arg camera_fps)/1 !

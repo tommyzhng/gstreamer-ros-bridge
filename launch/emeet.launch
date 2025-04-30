@@ -1,7 +1,7 @@
 <launch>
      <!-- Arguments -->
-    <arg name="camera_width" default="640" />
-    <arg name="camera_height" default="480" />
+    <arg name="camera_width" default="800" />
+    <arg name="camera_height" default="600" />
     <arg name="camera_fps" default="30" />
     <arg name="camera_format" default="BGR" />
     <arg name="camera_location" default="/dev/video2" />
