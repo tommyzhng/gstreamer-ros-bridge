@@ -1,9 +1,9 @@
 <launch>
      <!-- Arguments -->
     <arg name="camera_width" default="640" />
-    <arg name="camera_height" default="480" />
+    <arg name="camera_height" default="360" />
     <arg name="camera_fps" default="30" />
-    <arg name="camera_format" default="GRAY8" />
+    <arg name="camera_format" default="BGR" />
     <arg name="camera_location" default="/dev/video0" />
     <arg name="camera_topic" default="/camera/image_rect" />
     <arg name="custom_pipeline" default="
@@ -12,11 +12,11 @@
     "/>
 
     <arg name="gst_width" default="640"/>
-    <arg name="gst_height" default="480"/>
+    <arg name="gst_height" default="360"/>
     <arg name="gst_fps" default="30"/>
     <arg name="gst_topic" default="/camera/image_rect"/>
     
-    <arg name="gst_ip" default="100.64.0.1"/>
+    <arg name="gst_ip" default="127.0.0.1"/>
     <arg name="gst_port" default="5602"/>
     <arg name="bitrate" default="1200"/>
     <arg name="mtu" default="500"/>
