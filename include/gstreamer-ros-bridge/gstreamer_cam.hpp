@@ -31,7 +31,7 @@ public:
         void Update(const rclcpp::TimerEvent&);
 
         /**
-         * @brief set cam params for msg/camera_info
+         * @brief set cam params for sensor_msgs/msg/camera_info
          */
         void SetCameraParams();
         /**
@@ -39,7 +39,7 @@ public:
          */
         void InitializeGStreamer();
         /**
-         * @brief images from camera onto msg/image_rect
+         * @brief images from camera onto sensor_msgs/msg/Image
          */
         void PubCameraImage();
 
