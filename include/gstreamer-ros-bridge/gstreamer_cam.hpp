@@ -62,4 +62,4 @@ public:
 
 }
 
-#endif
+#endif // GSTREAMER_ROS_BRIDGE_GSTREAMER_CAM_HPP
