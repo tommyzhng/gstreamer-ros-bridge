@@ -19,7 +19,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(pluginlib REQUIRED)
 
 
-add_library(gstreamer_ros_bridge
+add_library(gstreamer_ros_bridge SHARED
   src/gstreamer_bridge.cpp
   src/gstreamer_publisher.cpp
   src/gstreamer_cam.cpp
@@ -85,6 +85,9 @@ target_link_libraries(gstreamer_publisher_node
   PUBLIC
     gstreamer_ros_bridge
 )
+
+rclcpp_components_register_nodes(gstreamer_cam_node "gstreamer_ros_bridge::GStreamerCam")
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

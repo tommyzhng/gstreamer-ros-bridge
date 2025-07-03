@@ -21,6 +21,7 @@ namespace gstreamer_ros_bridge
 class GStreamerCam : public rclcpp::Node
 {
 public:
+    COMPOSITION_PUBLIC
     GStreamerCam();
     ~GStreamerCam();
 
@@ -33,31 +34,30 @@ public:
         /**
          * @brief set cam params for sensor_msgs/msg/camera_info
          */
-        void SetCameraParams();
+        void set_cam_info();
         /**
          * @brief opens the camera pipeline
          */
-        void InitializeGStreamer();
+        void initialize_gstreamer();
         /**
          * @brief images from camera onto sensor_msgs/msg/Image
          */
-        void PubCameraImage();
+        void pub_camera_image();
 
-        void ConvertImage(GstMapInfo &map_info);
+        void convert_image(GstMapInfo &map_info);
 
-        sensor_msgs::msg::CameraInfo cameraInfo_;
-        cv::Mat frame_; // published frame
-        rclcpp::Publisher<cameraInfo_> rosCameraInfoPub_;
-        image_transport::Publisher<cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frame_).toImageMsg()> rosImagePub_;
-
-        rclcpp::TimerBase update_timer_;
+        sensor_msgs::msg::CameraInfo camera_info_;
+        rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr ros_camera_info_pub_;
         image_transport::ImageTransport it_;
-        
+        image_transport::Publisher ros_image_pub_;
+        rclcpp::TimerBase update_timer_;
+
         // null gchar initialization
         const gchar *format_{nullptr};
 
         std::string camera_location_, camera_format_, camera_topic_;
         int camera_width_, camera_height_, camera_fps_;
+        cv::Mat frame_; // published frame
 };
 
 }
