@@ -5,11 +5,13 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/msg/camera_info.h>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/image.hpp>
+#include <std_msgs/msg/header.hpp>
 #include <cstdlib>
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
-#include <image_transport/image_transport.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
 
 namespace gstreamer_ros_bridge
 {
@@ -21,15 +23,15 @@ namespace gstreamer_ros_bridge
 class GStreamerCam : public rclcpp::Node
 {
 public:
-    COMPOSITION_PUBLIC
-    GStreamerCam();
+    explicit GStreamerCam(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
     ~GStreamerCam();
 
     GstElement *pipeline_;
     GstElement *appsink_;
 
     private:
-        void Update(const rclcpp::TimerEvent&);
+        void initialize_components();
+        void update();
 
         /**
          * @brief set cam params for sensor_msgs/msg/camera_info
@@ -48,9 +50,8 @@ public:
 
         sensor_msgs::msg::CameraInfo camera_info_;
         rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr ros_camera_info_pub_;
-        image_transport::ImageTransport it_;
-        image_transport::Publisher ros_image_pub_;
-        rclcpp::TimerBase update_timer_;
+        rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr ros_image_pub_;
+        rclcpp::TimerBase::SharedPtr update_timer_;
 
         // null gchar initialization
         const gchar *format_{nullptr};

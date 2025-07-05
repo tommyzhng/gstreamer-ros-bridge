@@ -43,6 +43,7 @@ find_package(OpenCV REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0>=1.14)
 pkg_check_modules(GSTREAMER_BASE REQUIRED gstreamer-base-1.0>=1.14)
+pkg_check_modules(GSTREAMER_APP REQUIRED gstreamer-app-1.0>=1.14)
 
 target_include_directories(gstreamer_ros_bridge
   PUBLIC
@@ -50,7 +51,7 @@ target_include_directories(gstreamer_ros_bridge
     include/gstreamer-ros-bridge
     ${OpenCV_INCLUDE_DIRS}
     ${GSTREAMER_INCLUDE_DIRS}
-    ${GSTAPP_INCLUDE_DIRS}
+    ${GSTREAMER_APP_INCLUDE_DIRS}
   PRIVATE
     ${GST_INCLUDE_DIRS}
 )
@@ -62,32 +63,27 @@ target_compile_features(gstreamer_ros_bridge
 
 target_link_libraries(gstreamer_ros_bridge
   PUBLIC
-    ${GST_LIBRARIES}
-    ${OpenCV_LIBRARIES}
-)
-
-# node executables
-add_executable(gstreamer_cam_node src/gstreamer_cam_node.cpp)
-target_link_libraries(gstreamer_cam_node
-  PUBLIC
     ${GSTREAMER_LIBRARIES}
-    ${GSTAPP_LIBRARIES}
+    ${GSTREAMER_APP_LIBRARIES}
     ${OpenCV_LIBRARIES}
-    gstreamer_ros_bridge
-)
-add_executable(gstreamer_bridge_node src/gstreamer_bridge_node.cpp)
-target_link_libraries(gstreamer_bridge_node
-  PUBLIC
-    gstreamer_ros_bridge
-)
-add_executable(gstreamer_publisher_node src/gstreamer_publisher_node.cpp)
-target_link_libraries(gstreamer_publisher_node
-  PUBLIC
-    gstreamer_ros_bridge
 )
 
-rclcpp_components_register_nodes(gstreamer_cam_node "gstreamer_ros_bridge::GStreamerCam")
+rclcpp_components_register_nodes(gstreamer_ros_bridge 
+  "gstreamer_ros_bridge::GStreamerCam"
+)
 
+# Install library
+install(TARGETS gstreamer_ros_bridge
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+# Install launch files
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
