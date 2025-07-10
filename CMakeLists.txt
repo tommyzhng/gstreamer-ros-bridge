@@ -20,8 +20,8 @@ find_package(pluginlib REQUIRED)
 
 
 add_library(gstreamer_ros_bridge SHARED
-  src/gstreamer_bridge.cpp
-  src/gstreamer_publisher.cpp
+  # src/gstreamer_bridge.cpp
+  # src/gstreamer_publisher.cpp
   src/gstreamer_cam.cpp
 )
 
