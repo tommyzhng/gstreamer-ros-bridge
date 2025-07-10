@@ -1,15 +1,16 @@
-#pragma once
+#ifndef GSTREAMER_ROS_BRIDGE_GSTREAMER_PUBLISHER_HPP
+#define GSTREAMER_ROS_BRIDGE_GSTREAMER_PUBLISHER_HPP
 
 #include <string>
 
 #include <rclcpp/rclcpp.hpp>
 #include <opencv2/opencv.hpp>
-#include <sensor_msgs/msg/Image.h>
+#include <sensor_msgs/msg/image.hpp>
 
 class GStreamerPublisher : public rclcpp::Node
 {
 public:
-    GStreamerPublisher(std::shared_ptr<rclcpp::Node> node, const std::string &out_topic);
+    GStreamerPublisher(const rclcpp::NodeOptions &options = rclcpp::NodeOptions(), const std::string &out_topic);
     ~GStreamerPublisher();
 
     GStreamerPublisher(const GStreamerPublisher&) = delete;
@@ -28,12 +29,13 @@ public:
      * 
      * @return Whether the frame was processed properly.
      */
-     bool tryProcessFrame();
+     bool try_process_frame();
 
 private:
-    std::shared_ptr<rclcpp::Node> node;
     
-    cv::VideoCapture gstIn_;
-    rclcpp::Publisher<sensor_msgs::msg::Image> imgOutPub_;
+    cv::VideoCapture gst_in_;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr img_out_pub_;
 
 };
+
+#endif
