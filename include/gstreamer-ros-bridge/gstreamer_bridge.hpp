@@ -6,11 +6,13 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/msg/Image.h>
+#include <sensor_msgs/msg/image_encodings.hpp>
 #include <sensor_msgs/msg/camera_info.h>
 #include <std_srvs/SetBool.h>
 #include <gst/gst.h>
 #include <cstdlib>
 #include <functional>
+#include <rclcpp_components/register_node_macro.hpp>
 
 namespace gstreamer_ros_bridge
 {
@@ -26,20 +28,18 @@ public:
     ~GStreamerBridge();
 
 private:
-    virtual void onInit() override;
+    cv::Mat resize_and_pad(cv::Mat& image, int target_width, int target_height);
 
-    cv::Mat resizeAndPad(cv::Mat& image, int target_width, int target_height);
-
-    bool SetStreamOnCallback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp);
+    bool set_stream_on_cb(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp);
 
     /**
     * @brief Receive from ROS image topic and publish to pipeline to peer.
     * @param msg Image message from ROS.
     * @return void.
     */
-    void GSImageCallback(const sensor_msgs::msg::ImageConstPtr& msg);
+    void gs_image_cb(const sensor_msgs::msg::Image::SharedPtr msg);
 
-    rclcpp::Subscriber<sensor_msgs::msg::Image> gsImageSub_;
+    rclcpp::Subscriber<sensor_msgs::msg::Image> gs_image_sub_;
     rclcpp::Service<std_srvs::srv::SetBool> set_stream_on_srv_;
 
     // gstreamer pipeline
@@ -47,9 +47,7 @@ private:
     cv::Mat frame_;
 
     // gstreamer param member vars
-    int gst_width_{640}, gst_height_{480};
-
-    bool stream_on_ = true;
+    int gst_width_, gst_height_, gst_fps_, bitrate_, mtu_;
 
 };
 
