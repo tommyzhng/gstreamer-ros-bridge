@@ -3,6 +3,41 @@
 namespace gstreamer_ros_bridge
 {
 
+void GStreamerBridge::start_pipeline()
+{
+    this->declare_parameter("stream_on", true);
+    this->declare_parameter("gs_ip", "100.64.0.1");
+    this->declare_parameter("gs_port", "5602");
+
+    this->get_parameter("stream_on", stream_on_);
+    this->get_parameter("gs_ip", gs_ip_);
+    this->get_parameter("gs_port", gs_port_);
+    
+    setenv("GST_DEBUG", "3", 1);
+    
+    std::ostringstream udp_pipeline;     // gstreamer pipeline for udp to peer
+    udp_pipeline 
+        << "appsrc ! queue ! videoconvert ! videoscale !"
+        << " video/x-raw,width=" << gst_width_ 
+        << ",height=" << gst_height_
+        << ",framerate=" << gst_fps_ << "/1 !"
+        << " x264enc bitrate=" << bitrate_
+        << " speed-preset=ultrafast tune=zerolatency !"
+        << " rtph264pay mtu=" << mtu_ << " !"
+        << " udpsink host=" << gs_ip_
+        << " port=" << gs_port_
+        << " sync=false";
+
+    // start the udp pipeline
+    std::string gstreamer_pipeline = udp_pipeline.str();
+    pipeline_.open(gstreamer_pipeline, cv::CAP_GSTREAMER, 0, gst_fps_, cv::Size(gst_width_, gst_height_), true);
+    if (!pipeline_.isOpened())
+    {
+        RCLCPP_ERROR(this->get_logger(), "Failed to open gstreamer pipeline");
+        return;
+    }
+}
+
 GStreamerBridge::GStreamerBridge(const rclcpp::NodeOptions &options) : Node("gstreamer_bridge_node", options)
 {
     this->declare_parameter("gst_width", 640);
@@ -17,9 +52,11 @@ GStreamerBridge::GStreamerBridge(const rclcpp::NodeOptions &options) : Node("gst
     this->get_parameter("bitrate", bitrate_);
     this->get_parameter("mtu", mtu_);
 
-    gs_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>("camera/image_rect", 10, std::bind(&GStreamerBridge::gs_image_cb, this, _1));
-    set_stream_on_srv_ = this->create_service<std_srvs::srv::SetBool>("set_stream_on", &GStreamerBridge::set_stream_on_cb);
-
+    gs_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>("camera/image_rect", 10, std::bind(&GStreamerBridge::gs_image_cb, this, std::placeholders::_1));
+    set_stream_on_srv_ = this->create_service<std_srvs::srv::SetBool>(
+        "set_stream_on",
+        std::bind(&GStreamerBridge::set_stream_on_cb, this, std::placeholders::_1, std::placeholders::_2)
+    );
     start_pipeline();
 }
 
@@ -29,11 +66,11 @@ GStreamerBridge::~GStreamerBridge() {
 
 cv::Mat GStreamerBridge::resize_and_pad(cv::Mat &image, int target_width, int target_height) {
     if (image.empty()) {
-        RCLCPP_ERROR(this->get_logger("rclcpp"), "Input image is empty");
+        RCLCPP_ERROR(this->get_logger(), "Input image is empty");
         return cv::Mat();
     }
     if (image.cols == 0 || image.rows == 0) {
-        RCLCPP_ERROR(this->get_logger("rclcpp"), "Image has empty rows or columns");
+        RCLCPP_ERROR(this->get_logger(), "Image has empty rows or columns");
         return cv::Mat();
     }
 
@@ -74,63 +111,30 @@ cv::Mat GStreamerBridge::resize_and_pad(cv::Mat &image, int target_width, int ta
     return padded_image;
 }
 
-void GStreamerBridge::start_pipeline()
+bool GStreamerBridge::set_stream_on_cb(
+    const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
+    const std::shared_ptr<std_srvs::srv::SetBool::Response> resp)
 {
-    this->declare_parameter("stream_on", true);
-    this->declare_parameter("gs_ip", "100.64.0.1");
-    this->declare_parameter("gs_port", "5602");
-
-    this->get_parameter("stream_on", stream_on_);
-    this->get_parameter("gs_ip", gs_ip);
-    this->get_parameter("gs_port", gs_port_);
-    
-    setenv("GST_DEBUG", "3", 1);
-    
-    std::ostringstream udp_pipeline;     // gstreamer pipeline for udp to peer
-    udp_pipeline 
-        << "appsrc ! queue ! videoconvert ! videoscale !"
-        << " video/x-raw,width=" << gst_width_ 
-        << ",height=" << gst_height_
-        << ",framerate=" << gst_fps << "/1 !"
-        << " x264enc bitrate=" << bitrate
-        << " speed-preset=ultrafast tune=zerolatency !"
-        << " rtph264pay mtu=" << mtu << " !"
-        << " udpsink host=" << gs_ip
-        << " port=" << gs_port
-        << " sync=false";
-
-    // start the udp pipeline
-    std::string gstreamer_pipeline = udp_pipeline.str();
-    pipeline_.open(gstreamer_pipeline, cv::CAP_GSTREAMER, 0, gst_fps, cv::Size(gst_width_, gst_height_), true);
-    if (!pipeline_.isOpened())
-    {
-        RCLCPP_ERROR(this->get_logger("rclcpp"), "Failed to open gstreamer pipeline");
-        return;
-    }
-}
-
-bool GStreamerBridge::set_stream_on_cb(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp)
-{
-    if (req.data && !pipeline_.isOpened()) {
-        resp.success = false;
-        resp.message = "pipeline not opened";
+    if (req->data && !pipeline_.isOpened()) {
+        resp->success = false;
+        resp->message = "pipeline not opened";
     }
     else {
-        stream_on_ = req.data;
-        resp.success = true;
+        stream_on_ = req->data;
+        resp->success = true;
     }
-    RCLCPP_INFO(this->get_logger("rclcpp"), "Turned stream %s", stream_on_ ? "on" : "off");
+    RCLCPP_INFO(this->get_logger(), "Turned stream %s", stream_on_ ? "on" : "off");
     return true;
 }
 
-void GStreamerBridge::gs_image_cb(const sensor_msgs::msg::Image::SharedPtr &msg)
+void GStreamerBridge::gs_image_cb(const sensor_msgs::msg::Image::SharedPtr msg)
 {
     if (!pipeline_.isOpened()) {
-        RCLCPP_ERROR(this->get_logger("rclcpp"), "GStreamer pipeline is not opened, unable to write image");
+        RCLCPP_ERROR(this->get_logger(), "GStreamer pipeline is not opened, unable to write image");
         return;
     }
     if (!msg) {
-        RCLCPP_ERROR(this->get_logger("rclcpp"), "Received an empty image message.");
+        RCLCPP_ERROR(this->get_logger(), "Received an empty image message.");
         return;
     }
     // If stream is turned off, don't write to the pipeline
@@ -139,10 +143,10 @@ void GStreamerBridge::gs_image_cb(const sensor_msgs::msg::Image::SharedPtr &msg)
     }
     // write to gstreamer pipeline
     try {
-        cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::msg::image_encodings::BGR8);
+        cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, "bgr8");
         frame_ = cv_ptr->image;
     } catch (cv_bridge::Exception &e) {
-        RCLCPP_ERROR(this->get_logger("rclcpp"), "cv_bridge exception: %s", e.what());
+        RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
     }
     // check if image needs to be resized
     if (frame_.cols != gst_width_ || frame_.rows != gst_height_){

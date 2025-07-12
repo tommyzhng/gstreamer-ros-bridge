@@ -17,7 +17,7 @@ GStreamerPublisher::~GStreamerPublisher() {
 bool GStreamerPublisher::init(const std::string &pipeline) {
     gst_in_.open(pipeline, cv::CAP_GSTREAMER);
     if (!gst_in_.isOpened()) {
-        RCLCPP_ERROR(this->get_logger("rclcpp"), "Failed to open gstreamer pipeline!");
+        RCLCPP_ERROR(this->get_logger(), "Failed to open gstreamer pipeline!");
         return false;
     }
     return true;
@@ -36,7 +36,7 @@ bool GStreamerPublisher::try_process_frame() {
     cv::Mat frame;
     gst_in_ >> frame;
     if (frame.empty()) {
-        RCLCPP_ERROR(this->get_logger("rclcpp"), "Failed to read frame from gstreamer!");
+        RCLCPP_ERROR(this->get_logger(), "Failed to read frame from gstreamer!");
         return false;
     }
     auto image_msg = cv_bridge::CvImage(std_msgs::msg::Header, "bgr8", frame).toImageMsg();
