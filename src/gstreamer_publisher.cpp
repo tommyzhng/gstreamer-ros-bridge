@@ -39,7 +39,7 @@ bool GStreamerPublisher::try_process_frame() {
         RCLCPP_ERROR(this->get_logger("rclcpp"), "Failed to read frame from gstreamer!");
         return false;
     }
-    std::shared_ptr<sensor_msgs::msg::Image> image_msg = cv_bridge::CvImage(std_msgs::msg::Header, "bgr8", frame).toImageMsg();
+    auto image_msg = cv_bridge::CvImage(std_msgs::msg::Header, "bgr8", frame).toImageMsg();
     // Timestamp is when the image was received, not captured
     image_msg->header.stamp = rclcpp::Time::now();
     img_out_pub_->publish(image_msg);
