@@ -1,19 +1,39 @@
 #include "gstreamer_bridge.hpp"
 
-#include <pluginlib/class_list_macros.h>
-
-PLUGINLIB_EXPORT_CLASS(gstreamer_ros_bridge::GStreamerRosBridge, nodelet::Nodelet)
-
 namespace gstreamer_ros_bridge
 {
 
-cv::Mat GStreamerRosBridge::resizeAndPad(cv::Mat &image, int target_width, int target_height) {
+GStreamerBridge::GStreamerBridge(const rclcpp::NodeOptions &options) : Node("gstreamer_bridge_node", options)
+{
+    this->declare_parameter("gst_width", 640);
+    this->declare_parameter("gst_height", 480);
+    this->declare_parameter("gst_fps", 30);
+    this->declare_parameter("bitrate", 1200);
+    this->declare_parameter("mtu", 500);
+
+    this->get_parameter("gst_width", gst_width_);
+    this->get_parameter("gst_height", gst_height_);
+    this->get_parameter("gst_fps", gst_fps_);
+    this->get_parameter("bitrate", bitrate_);
+    this->get_parameter("mtu", mtu_);
+
+    gs_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>("camera/image_rect", 10, std::bind(&GStreamerBridge::gs_image_cb, this, _1));
+    set_stream_on_srv_ = this->create_service<std_srvs::srv::SetBool>("set_stream_on", &GStreamerBridge::set_stream_on_cb);
+
+    start_pipeline();
+}
+
+GStreamerBridge::~GStreamerBridge() {
+    pipeline_.release();
+}
+
+cv::Mat GStreamerBridge::resize_and_pad(cv::Mat &image, int target_width, int target_height) {
     if (image.empty()) {
-        NODELET_ERROR("Input image is empty");
+        RCLCPP_ERROR(this->get_logger("rclcpp"), "Input image is empty");
         return cv::Mat();
     }
     if (image.cols == 0 || image.rows == 0) {
-        NODELET_ERROR("Image has empty rows or columns");
+        RCLCPP_ERROR(this->get_logger("rclcpp"), "Image has empty rows or columns");
         return cv::Mat();
     }
 
@@ -54,33 +74,20 @@ cv::Mat GStreamerRosBridge::resizeAndPad(cv::Mat &image, int target_width, int t
     return padded_image;
 }
 
-GStreamerRosBridge::~GStreamerRosBridge()
+void GStreamerBridge::start_pipeline()
 {
-    pipeline_.release();
-}
+    this->declare_parameter("stream_on", true);
+    this->declare_parameter("gs_ip", "100.64.0.1");
+    this->declare_parameter("gs_port", "5602");
 
-void GStreamerRosBridge::onInit()
-{
-    nh_ = getPrivateNodeHandle();
-
-    nh_.getParam("stream_on", stream_on_);
-
-    std::string gs_ip = "100.64.0.1";
-    nh_.getParam("ip", gs_ip);
-    std::string gs_port = "5602";
-    nh_.getParam("port", gs_port);
-
-    int gst_fps = 30, bitrate = 1200, mtu = 500;
-    nh_.getParam("gst_width", gst_width_);
-    nh_.getParam("gst_height", gst_height_);
-    nh_.getParam("gst_fps", gst_fps);
-    nh_.getParam("bitrate", bitrate);
-    nh_.getParam("mtu", mtu);
-
+    this->get_parameter("stream_on", stream_on_);
+    this->get_parameter("gs_ip", gs_ip);
+    this->get_parameter("gs_port", gs_port_);
+    
     setenv("GST_DEBUG", "3", 1);
     
-    std::ostringstream udpPipeline;     // gstreamer pipeline for udp to peer
-    udpPipeline 
+    std::ostringstream udp_pipeline;     // gstreamer pipeline for udp to peer
+    udp_pipeline 
         << "appsrc ! queue ! videoconvert ! videoscale !"
         << " video/x-raw,width=" << gst_width_ 
         << ",height=" << gst_height_
@@ -91,25 +98,18 @@ void GStreamerRosBridge::onInit()
         << " udpsink host=" << gs_ip
         << " port=" << gs_port
         << " sync=false";
-    
-    std::string gst_topic = "/camera/image_rect";
-    nh_.getParam("gst_topic", gst_topic);
 
     // start the udp pipeline
-    std::string gstreamer_pipeline = udpPipeline.str();
+    std::string gstreamer_pipeline = udp_pipeline.str();
     pipeline_.open(gstreamer_pipeline, cv::CAP_GSTREAMER, 0, gst_fps, cv::Size(gst_width_, gst_height_), true);
     if (!pipeline_.isOpened())
     {
-        NODELET_ERROR("Failed to open gstreamer pipeline");
+        RCLCPP_ERROR(this->get_logger("rclcpp"), "Failed to open gstreamer pipeline");
         return;
     }
-
-    gsImageSub_ = nh_.subscribe(gst_topic, 1, &GStreamerRosBridge::GsImageCallback, this, ros::TransportHints().tcpNoDelay());
-
-    set_stream_on_srv_ = nh_.advertiseService("set_stream_on", &GStreamerRosBridge::SetStreamOnCallback, this);
 }
 
-bool GStreamerRosBridge::SetStreamOnCallback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp)
+bool GStreamerBridge::set_stream_on_cb(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &resp)
 {
     if (req.data && !pipeline_.isOpened()) {
         resp.success = false;
@@ -119,18 +119,18 @@ bool GStreamerRosBridge::SetStreamOnCallback(std_srvs::SetBool::Request &req, st
         stream_on_ = req.data;
         resp.success = true;
     }
-    NODELET_INFO("Turned stream %s", stream_on_ ? "on" : "off");
+    RCLCPP_INFO(this->get_logger("rclcpp"), "Turned stream %s", stream_on_ ? "on" : "off");
     return true;
 }
 
-void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
+void GStreamerBridge::gs_image_cb(const sensor_msgs::msg::Image::SharedPtr &msg)
 {
     if (!pipeline_.isOpened()) {
-        NODELET_ERROR("GStreamer pipeline is not opened, unable to write image");
+        RCLCPP_ERROR(this->get_logger("rclcpp"), "GStreamer pipeline is not opened, unable to write image");
         return;
     }
     if (!msg) {
-        NODELET_ERROR("Received an empty image message.");
+        RCLCPP_ERROR(this->get_logger("rclcpp"), "Received an empty image message.");
         return;
     }
     // If stream is turned off, don't write to the pipeline
@@ -139,17 +139,19 @@ void GStreamerRosBridge::GsImageCallback(const sensor_msgs::ImageConstPtr &msg)
     }
     // write to gstreamer pipeline
     try {
-        cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
+        cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::msg::image_encodings::BGR8);
         frame_ = cv_ptr->image;
     } catch (cv_bridge::Exception &e) {
-        NODELET_ERROR("cv_bridge exception: %s", e.what());
+        RCLCPP_ERROR(this->get_logger("rclcpp"), "cv_bridge exception: %s", e.what());
     }
     // check if image needs to be resized
     if (frame_.cols != gst_width_ || frame_.rows != gst_height_){
-        frame_ = resizeAndPad(frame_, gst_width_, gst_height_);
+        frame_ = resize_and_pad(frame_, gst_width_, gst_height_);
     }
     pipeline_.write(frame_);
     frame_.release();
 }
 
 }
+
+RCLCPP_COMPONENTS_REGISTER_NODE(gstreamer_ros_bridge::GStreamerBridge)
