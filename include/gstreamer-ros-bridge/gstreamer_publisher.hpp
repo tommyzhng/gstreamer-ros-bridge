@@ -6,6 +6,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <opencv2/opencv.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
 
 class GStreamerPublisher : public rclcpp::Node
 {
