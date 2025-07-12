@@ -17,11 +17,12 @@ find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(std_srvs REQUIRED)
 
 
 add_library(gstreamer_ros_bridge SHARED
-  # src/gstreamer_bridge.cpp
-  # src/gstreamer_publisher.cpp
+  src/gstreamer_bridge.cpp
+  src/gstreamer_publisher.cpp
   src/gstreamer_cam.cpp
 )
 
@@ -35,6 +36,7 @@ ament_target_dependencies(gstreamer_ros_bridge
     image_transport
     rclcpp_components
     pluginlib
+    std_srvs
 )
 
 #find_package(Eigen3 REQUIRED)
