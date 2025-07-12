@@ -35,7 +35,7 @@ private:
     /**
     * @brief Receive from ROS image topic and publish to pipeline to peer.
     * @param msg Image message from ROS.
-    * @return void.
+    * @return void.d
     */
     void start_pipeline();
     void gs_image_cb(const sensor_msgs::msg::Image::SharedPtr msg);
@@ -50,6 +50,7 @@ private:
     int gst_width_, gst_height_, gst_fps_, bitrate_, mtu_;
     bool stream_on_;
     std::string gs_ip_, gs_port_;
+    std::string cam_topic_;
 };
 
 }

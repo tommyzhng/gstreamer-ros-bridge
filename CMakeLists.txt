@@ -72,6 +72,7 @@ target_link_libraries(gstreamer_ros_bridge
 
 rclcpp_components_register_nodes(gstreamer_ros_bridge 
   "gstreamer_ros_bridge::GStreamerCam"
+  "gstreamer_ros_bridge::GStreamerBridge"
 )
 
 # Install library

@@ -45,14 +45,16 @@ GStreamerBridge::GStreamerBridge(const rclcpp::NodeOptions &options) : Node("gst
     this->declare_parameter("gst_fps", 30);
     this->declare_parameter("bitrate", 1200);
     this->declare_parameter("mtu", 500);
+    this->declare_parameter("cam_topic", "camera/image_rect");
 
     this->get_parameter("gst_width", gst_width_);
     this->get_parameter("gst_height", gst_height_);
     this->get_parameter("gst_fps", gst_fps_);
     this->get_parameter("bitrate", bitrate_);
     this->get_parameter("mtu", mtu_);
+    this->get_parameter("cam_topic", cam_topic_);
 
-    gs_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>("camera/image_rect", 10, std::bind(&GStreamerBridge::gs_image_cb, this, std::placeholders::_1));
+    gs_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(cam_topic_, 10, std::bind(&GStreamerBridge::gs_image_cb, this, std::placeholders::_1));
     set_stream_on_srv_ = this->create_service<std_srvs::srv::SetBool>(
         "set_stream_on",
         std::bind(&GStreamerBridge::set_stream_on_cb, this, std::placeholders::_1, std::placeholders::_2)

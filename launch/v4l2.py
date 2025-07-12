@@ -2,11 +2,18 @@ from launch import LaunchDescription
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
-camera_location = "/dev/video0"  
+camera_location = "/dev/video2"  
 camera_format = "BGR"
 camera_width = 640
 camera_height = 480
 camera_fps = 30
+
+# bridge
+gst_width = 640
+gst_height = 480
+gst_fps = 30
+mtu = 500
+bitrate = 1200
 
 def generate_launch_description():
     return LaunchDescription([
@@ -34,8 +41,26 @@ def generate_launch_description():
                         'calibration/R': [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
                         'calibration/P': [640.0, 0.0, 320.0, 0.0, 0.0, 480.0, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0],
                     }]
+                ),
+                ComposableNode(
+                    package='gstreamer_ros_bridge',
+                    plugin='gstreamer_ros_bridge::GStreamerBridge',
+                    name='gstreamer_bridge_node',
+                    parameters=[{
+                        'stream_on': True,
+                        'gs_ip': "100.64.9.7",
+                        'gs_port': "5602",
+                        'gst_width': gst_width,
+                        'gst_height': gst_height,
+                        'gst_fps': gst_fps,
+                        'bitrate': 1200,
+                        'mtu': 500,
+                        'cam_topic': "camera/image_raw"
+                    }]
                 )
             ],
             output='screen',
         )
     ])
+
+
