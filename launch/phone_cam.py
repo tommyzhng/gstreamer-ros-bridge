@@ -37,10 +37,10 @@ def generate_launch_description():
                         'camera_fps': camera_fps,
                         'custom_pipeline': f'v4l2src device={camera_location} ! videoconvert ! videoscale ! video/x-raw,format={camera_format},width={camera_width},height={camera_height},framerate={camera_fps}/1 ! appsink name=sink sync=false drop=true max-buffers=1',
                         'calibration/model': 'plumb_bob',
-                        'calibration/D': [0.0, 0.0, 0.0, 0.0, 0.0],
-                        'calibration/K': [640.0, 0.0, 320.0, 0.0, 480.0, 240.0, 0.0, 0.0, 1.0],
+                        'calibration/D': [0.06378237699334449, -0.06288559054414458, 0.010299844371743075, 0.001592196375327879, 0.0],
+                        'calibration/K': [431.34438684381337, 0.0, 318.6896043226821, 0.0, 430.10747116524595, 255.25822327269975, 0.0, 0.0, 1.0],
                         'calibration/R': [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
-                        'calibration/P': [640.0, 0.0, 320.0, 0.0, 0.0, 480.0, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+                        'calibration/P': [440.250732421875, 0.0, 319.36358907070826, 0.0, 0.0, 436.3755187988281, 259.78431637227914, 0.0, 0.0, 0.0, 1.0, 0.0],
                     }]
                 ),
                 ComposableNode(
