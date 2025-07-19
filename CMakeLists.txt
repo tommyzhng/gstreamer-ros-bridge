@@ -22,7 +22,7 @@ find_package(std_srvs REQUIRED)
 
 add_library(gstreamer_ros_bridge SHARED
   src/gstreamer_bridge.cpp
-  #src/gstreamer_publisher.cpp
+  src/gstreamer_publisher.cpp
   src/gstreamer_cam.cpp
 )
 
@@ -73,6 +73,7 @@ target_link_libraries(gstreamer_ros_bridge
 rclcpp_components_register_nodes(gstreamer_ros_bridge 
   "gstreamer_ros_bridge::GStreamerCam"
   "gstreamer_ros_bridge::GStreamerBridge"
+  "gstreamer_ros_bridge::GStreamerPublisher"
 )
 
 # Install library
