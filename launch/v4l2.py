@@ -14,7 +14,7 @@ gst_height = 480
 gst_fps = 30
 mtu = 500
 bitrate = 1200
-bridge_topic = "agent/detected_objects_image"
+bridge_topic = "camera/image_raw"
 
 def generate_launch_description():
     return LaunchDescription([
@@ -43,22 +43,22 @@ def generate_launch_description():
                         'calibration/P': [640.0, 0.0, 320.0, 0.0, 0.0, 480.0, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0],
                     }]
                 ),
-                # ComposableNode(
-                #     package='gstreamer_ros_bridge',
-                #     plugin='gstreamer_ros_bridge::GStreamerBridge',
-                #     name='gstreamer_bridge_node',
-                #     parameters=[{
-                #         'stream_on': True,
-                #         'gs_ip': "127.0.0.1",
-                #         'gs_port': "5602",
-                #         'gst_width': gst_width,
-                #         'gst_height': gst_height,
-                #         'gst_fps': gst_fps,
-                #         'bitrate': 1200,
-                #         'mtu': 500,
-                #         'cam_topic': bridge_topic
-                #     }]
-                # )
+                ComposableNode(
+                    package='gstreamer_ros_bridge',
+                    plugin='gstreamer_ros_bridge::GStreamerBridge',
+                    name='gstreamer_bridge_node',
+                    parameters=[{
+                        'stream_on': True,
+                        'gs_ip': "127.0.0.1",
+                        'gs_port': "5602",
+                        'gst_width': gst_width,
+                        'gst_height': gst_height,
+                        'gst_fps': gst_fps,
+                        'bitrate': 1200,
+                        'mtu': 500,
+                        'cam_topic': bridge_topic
+                    }]
+                )
             ],
             output='screen',
         )

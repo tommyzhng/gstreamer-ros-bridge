@@ -24,13 +24,11 @@ GStreamerPublisher::~GStreamerPublisher() {
 }
 
 bool GStreamerPublisher::init(const std::string &pipeline) {
-    RCLCPP_INFO(this->get_logger(), "beginning pipeline");
     gst_in_.open(pipeline, cv::CAP_GSTREAMER);
     if (!gst_in_.isOpened()) {
         RCLCPP_ERROR(this->get_logger(), "Failed to open gstreamer pipeline!");
         return false;
     }
-    RCLCPP_INFO(this->get_logger(), "initializing pipeline");
     return true;
 }
 
@@ -40,7 +38,6 @@ bool GStreamerPublisher::init(int port) {
         "application/x-rtp, encoding-name=H264, payload=96 ! "
         "rtpjitterbuffer ! rtph264depay ! avdec_h264 ! videoconvert ! videoscale ! "
         "video/x-raw ! appsink sync=false";
-    RCLCPP_INFO(this->get_logger(), "initializing via port");
     return init(oss.str());
 }
 

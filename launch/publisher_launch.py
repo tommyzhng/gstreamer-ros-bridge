@@ -1,11 +1,15 @@
 from launch import LaunchDescription
 from launch_ros.actions import ComposableNodeContainer
+from launch.actions import LogInfo
 from launch_ros.descriptions import ComposableNode
 
 port = 5602
 
 def generate_launch_description():
     return LaunchDescription([
+        LogInfo(
+            msg='Starting GStreamerPublisher'
+        ),
         ComposableNodeContainer(
             name='gstreamer_publisher_container',
             namespace='',
@@ -22,5 +26,8 @@ def generate_launch_description():
                 )
             ],
             output='screen',
+        ),
+        LogInfo(
+            msg='GStreamerPublisher started'
         )
     ])        
