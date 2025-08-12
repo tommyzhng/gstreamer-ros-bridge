@@ -2,7 +2,7 @@ from launch import LaunchDescription
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
-camera_location = "/dev/video0  "  
+camera_location = "/dev/video0"
 camera_format = "BGR"
 camera_width = 640
 camera_height = 480
