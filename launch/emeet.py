@@ -7,7 +7,7 @@ camera_format = "BGR"
 camera_width = 800
 camera_height = 600
 camera_fps = 30
-custom_pipeline = f'v4l2src device={camera_location} ! videoconvert ! videoscale ! video/x-raw,format={camera_format},width={camera_width},height={camera_height},framerate={camera_fps}/1 ! appsink name=sink sync=false drop=true max-buffers=1',
+custom_pipeline = f'v4l2src device={camera_location} ! videoconvert ! videoscale ! video/x-raw,format={camera_format},width={camera_width},height={camera_height},framerate={camera_fps}/1 ! appsink name=sink sync=false drop=true max-buffers=1'
 
 # bridge
 gst_width = 640
