@@ -6,7 +6,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/msg/image.hpp>
-#include <sensor_msgs/msg/camera_info.h>
+#include <sensor_msgs/msg/camera_info.hpp>
 #include <std_srvs/srv/set_bool.hpp>
 #include <gst/gst.h>
 #include <cstdlib>
@@ -35,7 +35,7 @@ private:
     /**
     * @brief Receive from ROS image topic and publish to pipeline to peer.
     * @param msg Image message from ROS.
-    * @return void.d
+    * @return void
     */
     void start_pipeline();
     void gs_image_cb(const sensor_msgs::msg::Image::SharedPtr msg);

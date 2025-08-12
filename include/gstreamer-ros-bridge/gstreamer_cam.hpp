@@ -30,7 +30,6 @@ public:
     GstElement *appsink_;
 
     private:
-        void initialize_components();
         void update();
 
         /**

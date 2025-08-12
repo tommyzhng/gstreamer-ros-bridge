@@ -63,24 +63,35 @@ void GStreamerCam::set_cam_info()
     this->get_parameter("calibration/R", R);
     this->get_parameter("calibration/P", P);
 
-    camera_info_.header.frame_id = camera_topic_;
     camera_info_.height = camera_height_;
     camera_info_.width = camera_width_;
     
+    // Check D matrix
     if (D.size() == 5) {
         camera_info_.d = D;
+    } else {
+        RCLCPP_WARN(this->get_logger(), "Distortion matrix (D) has incorrect size. Expected 5, but got %zu.", D.size());
     }
+
+    // Check K matrix
     if (K.size() == 9) {
         std::copy(K.begin(), K.end(), camera_info_.k.begin());
+    } else {
+        RCLCPP_WARN(this->get_logger(), "Intrinsic matrix (K) has incorrect size. Expected 9, but got %zu.", K.size());
     }
+
+    // Check R matrix
     if (R.size() == 9) {
         std::copy(R.begin(), R.end(), camera_info_.r.begin());
+    } else {
+        RCLCPP_WARN(this->get_logger(), "Rectification matrix (R) has incorrect size. Expected 9, but got %zu.", R.size());
     }
+
+    // Check P matrix
     if (P.size() == 12) {
         std::copy(P.begin(), P.end(), camera_info_.p.begin());
-    }
-    else {
-        RCLCPP_WARN(this->get_logger(), "Camera calibration parameters are not set correctly.");
+    } else {
+        RCLCPP_WARN(this->get_logger(), "Projection matrix (P) has incorrect size. Expected 12, but got %zu.", P.size());
     }
 }
 
